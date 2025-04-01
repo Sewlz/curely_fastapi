@@ -6,13 +6,13 @@ class UserRepository:
 
     @staticmethod
     def add_user(user_id: str, user_data: dict):
-        encrypted_data = {key: aes_cipher.encrypt(value) for key, value in user_data.items()}
+        encrypted_data = {key: aes_cipher.encrypt(str(value)) for key, value in user_data.items() if value is not None}
         db.collection(UserRepository.COLLECTION_NAME).document(user_id).set(encrypted_data)
         return {"message": "User added successfully"}
 
     @staticmethod
     def update_user(user_id: str, update_data: dict):
-        encrypted_data = {key: aes_cipher.encrypt(value) for key, value in update_data.items()}
+        encrypted_data = {key: aes_cipher.encrypt(str(value)) for key, value in update_data.items() if value is not None}
         db.collection(UserRepository.COLLECTION_NAME).document(user_id).update(encrypted_data)
         return {"message": "User updated successfully"}
 

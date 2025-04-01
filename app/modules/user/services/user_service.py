@@ -4,7 +4,7 @@ from app.modules.user.schemas.user_schema import UserCreate, UserUpdate
 class UserService:
     @staticmethod
     def create_user(user_id: str, user_data: UserCreate):
-        return UserRepository.add_user(user_id, user_data.dict())
+        return UserRepository.add_user(user_id, user_data.dict(exclude_unset=True))
 
     @staticmethod
     def update_user(user_id: str, update_data: UserUpdate):

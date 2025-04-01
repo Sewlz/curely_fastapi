@@ -99,3 +99,4 @@ secret.json
 *.swo
 *.sublime-workspace
 *.sublime-project
+.qodo
