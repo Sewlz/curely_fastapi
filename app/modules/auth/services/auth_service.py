@@ -63,7 +63,7 @@ class AuthService:
             </html>
             """
             msg = MIMEMultipart()
-            msg["From"] = SMTP_EMAIL
+            msg["From"] = f"Curely Support <{SMTP_EMAIL}>"  # Thay đổi tên hiển thị
             msg["To"] = user_data.email
             msg["Subject"] = subject
             msg.attach(MIMEText(body, "html"))
