@@ -1,5 +1,5 @@
 from fastapi import Request, HTTPException, Security, Depends
-from app.common.security.auth_guard import auth_guard  # Sử dụng auth_guard để xác thực user
+from app.common.security.auth import auth_guard  # Sử dụng auth_guard để xác thực user
 
 async def admin_guard(request: Request, user=Depends(auth_guard)):
     """

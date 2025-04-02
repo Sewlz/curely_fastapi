@@ -3,6 +3,10 @@ from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema
 from app.modules.auth.services.auth_service import AuthService
 router = APIRouter()
 
+
+from app.common.security.auth import auth_guard
+from app.modules.auth.repositories.auth_repository import AuthRepository
+
 @router.post("/register", tags=["Auth"])
 def register_user(user_data: RegisterUserSchema, auth_service: AuthService = Depends()):
     result = auth_service.register_user(user_data)
@@ -65,3 +69,22 @@ def refresh_token(refresh_token: str, auth_service: AuthService = Depends()):
 @router.post("/forgot-password", tags=["Auth"])
 def forgot_password(payload: ForgotPasswordSchema, auth_service: AuthService = Depends()):
     return auth_service.forgot_password(payload.email)
+
+
+
+
+@router.get("/auth-user", tags=["Auth"])
+def get_user_info(user: dict = Depends(auth_guard)):
+    """
+    Lấy thông tin tài khoản từ Firestore.
+    """
+    user_id = user["uid"]
+    user_data = AuthRepository.get_user(user_id)
+
+    if not user_data:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "message": "User retrieved successfully",
+        "user": user_data
+    }

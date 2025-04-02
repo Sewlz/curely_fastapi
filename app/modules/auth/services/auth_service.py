@@ -1,12 +1,12 @@
 import smtplib
 import os
-import firebase_admin
 from firebase_admin import auth
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from fastapi import HTTPException
 import requests
 from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema
+from app.modules.auth.repositories.auth_repository import AuthRepository
 from dotenv import load_dotenv
 
 # Load biến môi trường từ file .env
@@ -21,21 +21,31 @@ class AuthService:
     @staticmethod
     def register_user( user_data: RegisterUserSchema):
         try:
-            # ✅ Chuẩn hóa số điện thoại
-            phone_number = user_data.phone_number.strip()
-            if phone_number.startswith("0"):
-                phone_number = "+84" + phone_number[1:]
-            elif not phone_number.startswith("+"):
-                phone_number = "+84" + phone_number
+             # Kiểm tra xem password và confirm_password có khớp không
+            if user_data.password != user_data.confirm_password:
+                raise HTTPException(status_code=400, detail="Passwords do not match")
+            
             # ✅ Tạo user trên Firebase
             user = auth.create_user(
                 email=user_data.email,
                 password=user_data.password,
-                display_name=f"{user_data.first_name} {user_data.last_name}",
-                phone_number=phone_number or ""
+                display_name=user_data.name,
             )
              # ✅ Gán quyền mặc định là "user"
             auth.set_custom_user_claims(user.uid, {"role": "user"})
+
+            # 🔥 Lưu thông tin người dùng vào Firestore (bao gồm mã hóa thông tin)
+            user_info = {
+                "email": user_data.email,
+                "name": user_data.name,
+                "role": "user",
+                "birthday": "",
+                "image": "",
+            }
+
+            # Gọi repository để lưu thông tin người dùng
+            AuthRepository.create_user(user.uid, user_info)
+
 
             # 🔥 Tạo link xác minh email
             verification_link = auth.generate_email_verification_link(user.email)
@@ -197,6 +207,18 @@ class AuthService:
                 role = "user"
                 auth.set_custom_user_claims(user_record.uid, {"role": role})
 
+            # 🔥 Lưu thông tin người dùng vào Firestore (bao gồm mã hóa thông tin)
+            user_info = {
+                "email": email,
+                "firstName": display_name.split(" ")[0],
+                "lastName": " ".join(display_name.split(" ")[1:]),
+                "role": role,
+                "image": photo_url,
+            }
+
+            # Lưu vào Firestore
+            AuthRepository.create_user(uid, user_info)
+
             # ✅ Tạo Custom Token cho Firebase Authentication
             custom_token = auth.create_custom_token(uid).decode("utf-8")
 
@@ -248,6 +270,18 @@ class AuthService:
                 role = "user"
                 auth.set_custom_user_claims(user_record.uid, {"role": role})
 
+             # 🔥 Lưu thông tin người dùng vào Firestore (bao gồm mã hóa thông tin)
+            user_info = {
+                "email": email,
+                "firstName": display_name.split(" ")[0],
+                "lastName": " ".join(display_name.split(" ")[1:]),
+                "role": role,
+                "image": photo_url,
+            }
+
+            # Lưu vào Firestore
+            AuthRepository.create_user(uid, user_info)
+            
             # ✅ Tạo Custom Token cho Firebase Authentication
             custom_token = auth.create_custom_token(uid).decode("utf-8")
 

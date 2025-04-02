@@ -18,10 +18,10 @@ app = FastAPI(
 # CORS Middleware để frontend có thể gọi API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Thay đổi thành URL của frontend nếu cần
+    allow_origins=["*"],  # Thay đổi thành URL của frontend nếu cần
     allow_credentials=True,  # Nếu frontend gửi cookies hoặc headers bảo mật
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

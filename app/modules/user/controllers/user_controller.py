@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from app.modules.user.services.user_service import UserService
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate , ChangePasswordSchema
-from app.common.security.auth_guard import auth_guard
+from app.common.security.auth import auth_guard
 router = APIRouter()
 
 @router.post("/resend-verification-email", tags=["User"])

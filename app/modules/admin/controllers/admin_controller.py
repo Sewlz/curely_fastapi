@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException 
 from app.modules.admin.services.admin_service import AdminService
-from app.common.security.admin_guard import admin_guard
+from app.common.security.admin import admin_guard
 router = APIRouter()
 
 @router.patch("/set-admin/{user_id}", tags=["Admin"])
