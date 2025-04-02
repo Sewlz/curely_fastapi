@@ -1,2 +1,39 @@
+# Virtual environment
 venv/
+.env
+*.env
+
+# Python cache
 __pycache__/
+*.py[cod]
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+
+# Logs and temp files
+*.log
+*.out
+*.pid
+*.lock
+*.sqlite3
+
+# Compiled files
+*.so
+*.pyc
+
+# Docker
+docker-compose.override.yml
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Database files
+*.db
+*.sqlite
+
+# Dependencies
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
