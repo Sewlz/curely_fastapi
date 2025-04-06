@@ -1,4 +1,4 @@
-from app.common.database.firestore import db
+from app.common.database.supabasedb import db
 from app.common.utils.encryption import aes_cipher
 
 class UserRepository:

@@ -18,3 +18,13 @@ class ChangePasswordSchema(BaseModel):
     old_password: str = Field(..., min_length=8, max_length=20, title="Old Password", description="The user's current password")
     new_password: str = Field(..., min_length=8, max_length=20, title="New Password", description="The new password for the user")
     confirm_password: str = Field(..., min_length=8, max_length=20, title="Confirm Password", description="Confirm the new password")
+
+class NewPasswordModel(BaseModel):
+    new_password: str
+    confirm_password: str
+
+    def validate(self):
+        if self.new_password != self.confirm_password:
+            return {"status": "fail", "data": "password not match"}
+        else:
+            return {"status": "ok", "data": NewPasswordModel(**self.dict())}

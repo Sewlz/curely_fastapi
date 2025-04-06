@@ -1,7 +1,17 @@
 from fastapi import Request, HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from firebase_admin import auth
-import datetime
+from supabase import create_client
+import os
+from dotenv import load_dotenv
+import jwt
+
+# Load biến môi trường
+load_dotenv()
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+
+# Tạo Supabase client
+supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 security = HTTPBearer()
 
@@ -11,29 +21,29 @@ class AuthGuard:
             raise HTTPException(status_code=401, detail="No token provided")
 
         token = credentials.credentials
+
         try:
-            decoded_token = auth.verify_id_token(token)
-            user = auth.get_user(decoded_token["uid"])
-            tokens_valid_after_time = user.tokens_valid_after_timestamp
+            # Giải mã JWT từ Supabase (dùng JWT decode để lấy payload)
+            payload = jwt.decode(token, options={"verify_signature": False})  # KHÔNG dùng verify_signature trên client
+            user_id = payload.get("sub")
+            role = payload.get("role", "user")
 
-            if tokens_valid_after_time:
-                token_revoke_time = datetime.datetime.fromtimestamp(tokens_valid_after_time / 1000.0)
-                auth_time = datetime.datetime.fromtimestamp(decoded_token["auth_time"])
-                if auth_time < token_revoke_time:
-                    raise HTTPException(status_code=401, detail="Token has been revoked")
+            if not user_id:
+                raise HTTPException(status_code=401, detail="Invalid token payload")
 
-            user_claims = user.custom_claims or {}
-            role = user_claims.get("role", "user")
+            # In ra thông tin người dùng trên console
+            print(f"Authenticated User ID: {user_id}, Role: {role}")
 
-            request.state.user = {"uid": decoded_token["uid"], "role": role}
-            return request.state.user
+            # Thêm thông tin người dùng vào request.state
+            request.state.user = {"uid": user_id, "role": role}
 
-        except auth.InvalidIdTokenError:
-            raise HTTPException(status_code=401, detail="Invalid ID token")
-        except auth.ExpiredIdTokenError:
+            # Trả về thông tin người dùng
+            return {"uid": user_id, "role": role}
+
+        except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token has expired")
-        except auth.RevokedIdTokenError:
-            raise HTTPException(status_code=401, detail="Token has been revoked")
+        except jwt.InvalidTokenError:
+            raise HTTPException(status_code=401, detail="Invalid token")
         except Exception as e:
             raise HTTPException(status_code=401, detail=str(e))
 
