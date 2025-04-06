@@ -1,25 +1,44 @@
-from app.common.database.firestore import db
-from app.common.utils.encryption import aes_cipher
+from app.common.database.supabase import supabase
+from datetime import datetime, date
 
 class UserRepository:
-    COLLECTION_NAME = "users"
-
     @staticmethod
     def add_user(user_id: str, user_data: dict):
-        encrypted_data = {key: aes_cipher.encrypt(str(value)) for key, value in user_data.items() if value is not None}
-        db.collection(UserRepository.COLLECTION_NAME).document(user_id).set(encrypted_data)
-        return {"message": "User added successfully"}
+        payload = {
+            "userId": user_id,
+            **{
+                key: value.isoformat() if isinstance(value, datetime) else value
+                for key, value in user_data.items()
+            },
+            "created_at": datetime.utcnow().isoformat()
+        }
+
+        res = supabase.table("users").insert(payload).execute()
+        if res.data is None:
+            raise Exception("Failed to insert user.")
+        return {"message": "User added to database successfully"}
 
     @staticmethod
     def update_user(user_id: str, update_data: dict):
-        encrypted_data = {key: aes_cipher.encrypt(str(value)) for key, value in update_data.items() if value is not None}
-        db.collection(UserRepository.COLLECTION_NAME).document(user_id).update(encrypted_data)
-        return {"message": "User updated successfully"}
+        payload = {
+            **{
+                key: (
+                    value.isoformat()
+                    if isinstance(value, (datetime, date)) else value
+                )
+                for key, value in update_data.items()
+            },
+            "created_at": datetime.utcnow().isoformat()  # cập nhật mỗi lần update
+        }
+
+        res = supabase.table("users").update(payload).eq("userId", user_id).execute()
+        if res.data is None:
+            raise Exception("Failed to update user.")
+        return {"message": "User updated in database successfully"}
 
     @staticmethod
     def get_user(user_id: str):
-        user_ref = db.collection(UserRepository.COLLECTION_NAME).document(user_id).get()
-        if user_ref.exists:
-            decrypted_data = {key: aes_cipher.decrypt(value) for key, value in user_ref.to_dict().items()}
-            return decrypted_data
-        return None
+        res = supabase.table("users").select("*").eq("userId", user_id).single().execute()
+        if res.data is None:
+            return None
+        return res.data

@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# Import routers từ modules
 from app.modules.user.controllers.user_controller import router as user_router
 
 app = FastAPI(

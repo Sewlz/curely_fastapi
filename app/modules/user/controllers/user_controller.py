@@ -6,15 +6,24 @@ router = APIRouter()
 
 @router.post("/{user_id}", response_model=dict)
 def create_user(user_id: str, user_data: UserCreate):
-    return UserService.create_user(user_id, user_data)
+    try:
+        return UserService.create_user(user_id, user_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/{user_id}", response_model=dict)
 def update_user(user_id: str, update_data: UserUpdate):
-    return UserService.update_user(user_id, update_data)
+    try:
+        return UserService.update_user(user_id, update_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{user_id}", response_model=dict)
 def get_user(user_id: str):
-    user = UserService.get_user(user_id)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+    try:
+        user = UserService.get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
