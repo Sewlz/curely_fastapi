@@ -1,33 +1,75 @@
-import numpy as np
+import tempfile
+from fastapi import UploadFile, HTTPException
+from app.modules.cnn.schemas.cnn_schema import PredictionResult
 from PIL import Image
+import numpy as np
 import tensorflow as tf
-from fastapi import UploadFile
 from uuid import uuid4
-from fastapi import HTTPException
+from datetime import timedelta
+import os
+from app.common.database.supabase import supabase
+from app.modules.cnn.repositories.cnn_repository import CNNRepository
 
-# Load the trained CNN model
-MODEL_PATH = "app\model_hub\mri_cnn_model.h5"
+MODEL_PATH = "app/model_hub/mri_cnn_model.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
-
-# Define class labels based on your model's output
 CLASS_LABELS = ["glioma", "meningioma", "notumor", "pituitary"]
 
-def preprocess_image(image: Image.Image):
+class CNNService:
+    def preprocess_image(image: Image.Image):
+        try:
+            image = image.convert("RGB")
+            image = image.resize((256, 256))
+            image = np.array(image) / 255.0
+            image = np.expand_dims(image, axis=0)
+            return image
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
+
+    def get_prediction_history(user_id: str):
+        try:
+            return CNNRepository.get_user_history(user_id)
+        except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")        
+
+
+async def predict_image(image: UploadFile, user_id: str):
     try:
-        image = image.convert("RGB") 
-        image = image.resize((256, 256))  
-        image = np.array(image) / 255.0  
-        image = np.expand_dims(image, axis=0)
-        return image
+        file_id = f"{uuid4()}.png"
+
+        # Predict
+        image.file.seek(0)
+        image_data = Image.open(image.file)
+        processed_image = preprocess_image(image_data)
+        predictions = model.predict(processed_image)
+        predicted_index = np.argmax(predictions)
+        predicted_class = CLASS_LABELS[predicted_index]
+        confidence = float(predictions[0][predicted_index])
+
+        # Save file temporarily
+        image.file.seek(0)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+            tmp.write(image.file.read())
+            tmp_path = tmp.name
+
+        # Upload to Supabase
+        # try:
+        supabase.storage.from_("imagebucket").upload(file_id, tmp_path)
+        # except SupabaseException as e:
+        #     raise HTTPException(status_code=500, detail=f"Supabase upload failed: {str(e)}")
+
+        os.remove(tmp_path)
+
+        public_url = supabase.storage.from_("imagebucket").get_public_url(file_id)
+
+        CNNRepository.save_diagnosis(user_id, public_url, predicted_class, confidence)
+
+        return PredictionResult(
+            message="Prediction successful",
+            prediction=predicted_class,
+            confidence=confidence
+        )
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
-async def predict_image(image: UploadFile):
-    image_data = Image.open(image.file)
-    processed_image = preprocess_image(image_data)  
 
-    # Model Prediction
-    predictions = model.predict(processed_image)
-    predicted_class = CLASS_LABELS[np.argmax(predictions)]
-
-    return {"message": "Prediction successful", "prediction": predicted_class}

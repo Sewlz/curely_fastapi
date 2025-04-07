@@ -1,9 +1,15 @@
 from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
+from typing import List, Optional
 
-class CNNResponseSchema(BaseModel):
-    user_id: str
-    image_url: str
+class PredictionResult(BaseModel):
+    message: str
     prediction: str
-    timestamp: Optional[datetime] = None
+    confidence: float
+
+class DiagnosisRecord(BaseModel):
+    diagnosisId: str
+    userId: str
+    mriImageUrl: str
+    aiPrediction: str
+    confidenceScore: float
+    diagnosedAt: Optional[str] = None

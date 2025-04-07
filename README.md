@@ -96,31 +96,63 @@ curely_fastapi/
 
 ## Installation & Setup
 
-### 1. Install Dependencies
+### 1. Set Up Virtual Environment (Recommended)
+
+If you haven't already, create and activate a virtual environment:
+
+```bash
+python -m venv venv
+```
+
+#### On Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+#### On macOS/Linux:
+
+```bash
+source venv/bin/activate
+```
+
+### 2. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Run FastAPI Server
+### 3. Environment Setup
+
+Create a `.env` file in the root directory and define required environment variables. For example:
+
+```
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-secret-key
+```
+
+Make sure your app loads the environment using `python-dotenv`. Add the following to the top of your main file (`main.py` or `app/main.py`):
+
+```python
+from dotenv import load_dotenv
+load_dotenv()
+```
+
+### 4. Run FastAPI Server
 
 If `main.py` is in the `app/` directory:
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app
 ```
 
 If `main.py` is in the root directory:
 
 ```bash
-uvicorn main:app --reload
+uvicorn main:app
 ```
 
-### 3. Environment Setup
-
-Create a `.env` file and define required environment variables.
-
-### 4. API Documentation
+### 5. API Documentation
 
 Once the server is running, access the API documentation at:
 
