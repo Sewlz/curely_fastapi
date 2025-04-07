@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, requests
-from fastapi.security import  HTTPBearer
+from fastapi.security import HTTPBearer
 from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema , GoogleLoginSchema ,ForgotPasswordSchema
 from app.modules.auth.services.auth_service import AuthService
 router = APIRouter()

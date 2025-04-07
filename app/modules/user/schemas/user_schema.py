@@ -1,30 +1,20 @@
-from pydantic import BaseModel, EmailStr ,Field
+from pydantic import BaseModel, EmailStr
 from typing import Optional
+from datetime import date
 
 class UserBase(BaseModel):
     name: str
     email: EmailStr
     profilePicture: Optional[str] = None
+    nickName: Optional[str] = None
+    dob: Optional[date] = None  # Ngày sinh
 
 class UserCreate(UserBase):
     pass
 
 class UserUpdate(BaseModel):
     name: Optional[str]
+    email: Optional[EmailStr]
     profilePicture: Optional[str]
-
-# Schema cho thay đổi mật khẩu
-class ChangePasswordSchema(BaseModel):
-    old_password: str = Field(..., min_length=8, max_length=20, title="Old Password", description="The user's current password")
-    new_password: str = Field(..., min_length=8, max_length=20, title="New Password", description="The new password for the user")
-    confirm_password: str = Field(..., min_length=8, max_length=20, title="Confirm Password", description="Confirm the new password")
-
-class NewPasswordModel(BaseModel):
-    new_password: str
-    confirm_password: str
-
-    def validate(self):
-        if self.new_password != self.confirm_password:
-            return {"status": "fail", "data": "password not match"}
-        else:
-            return {"status": "ok", "data": NewPasswordModel(**self.dict())}
+    nickName: Optional[str]
+    dob: Optional[date]

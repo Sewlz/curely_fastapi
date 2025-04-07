@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 #from app.modules.admin.controllers.admin_controller import router as admin_router
 from app.modules.auth.controllers.auth_controller import router as auth_router
-# from app.modules.user.controllers.user_controller import router as user_router
+from app.modules.user.controllers.user_controller import router as user_router
 
 
 
@@ -29,7 +29,7 @@ app.add_middleware(
 # Include router từ module User
 #app.include_router(admin_router, prefix="/admins", tags=["Admin"])
 app.include_router(auth_router, prefix="/auths", tags=["Auth"])
-# app.include_router(user_router, prefix="/users", tags=["User"])
+app.include_router(user_router, prefix="/users", tags=["User"])
 
 
 # Root API test
