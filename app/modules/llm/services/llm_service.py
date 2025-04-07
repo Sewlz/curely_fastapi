@@ -9,7 +9,7 @@ from app.modules.llm.schemas.llm_schema import ChatMessageSchema
 class LLMService:
     def __init__(self):
         print(f"Loading model from: {MODEL_PATH}")
-        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True, repo_type="local")
+        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
         self.model = AutoModelForCausalLM.from_pretrained(MODEL_PATH, torch_dtype=torch.float16).to('cuda')
 
     def create_session(user_id: str, session_name: str):
