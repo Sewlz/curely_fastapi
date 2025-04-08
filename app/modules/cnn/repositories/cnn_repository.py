@@ -51,20 +51,23 @@ class CNNRepository:
                 raw_url = item.get("mriImageUrl")
                 signed_url = None
     
-                if raw_url and "/storage/v1/object/public/" in raw_url:
-                    clean_url = raw_url.split('?')[0]
-                    # Lấy full path bên trong bucket, ví dụ: "imagebucket/uploads/file.png"
-                    file_path = clean_url.split("/storage/v1/object/public/")[-1]
+                if raw_url and "/storage/v1/object/public/imagebucket/" in raw_url:
+                    try:
+                        clean_url = raw_url.split('?')[0]
+                        file_path_inside_bucket = clean_url.split("/storage/v1/object/public/imagebucket/")[-1]
+                        bucket_name = "imagebucket"
     
-                    # Tách tên bucket và đường dẫn file
-                    parts = file_path.split("/", 1)
-                    if len(parts) == 2:
-                        bucket_name, file_path_inside_bucket = parts
+                        print(f"Bucket: {bucket_name}, Path inside: {file_path_inside_bucket}")
+    
+                        # Lấy public URL nếu bucket đang ở chế độ public
                         signed_response = supabase.storage \
                             .from_(bucket_name) \
-                            .create_signed_url(file_path_inside_bucket, int(timedelta(minutes=180).total_seconds()))
+                            .get_public_url(file_path_inside_bucket)
     
-                        signed_url = signed_response.get("signedURL") if signed_response else None
+                        signed_url = signed_response if signed_response else None
+    
+                    except Exception as sign_err:
+                        print(f"[ERROR] Lỗi tạo signed URL: {sign_err}")
     
                 item["signedImageUrl"] = signed_url
     
@@ -73,6 +76,9 @@ class CNNRepository:
         except Exception as e:
             print(f"Error retrieving history with signed image URLs: {e}")
             return []
+
+
+
 
 
     @staticmethod
