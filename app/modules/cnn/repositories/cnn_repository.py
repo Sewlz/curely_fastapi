@@ -44,30 +44,36 @@ class CNNRepository:
                 .eq("userId", user_uuid) \
                 .order("diagnosedAt", desc=True) \
                 .execute()
-
+    
             history = result.data
-
-            # Add signed image URL for each item
+    
             for item in history:
                 raw_url = item.get("mriImageUrl")
+                signed_url = None
+    
                 if raw_url and "/storage/v1/object/public/" in raw_url:
                     clean_url = raw_url.split('?')[0]
-                    file_path = clean_url.split("/storage/v1/object/public/")[-1] if raw_url else None
-                    f_file_path = file_path.split("/")[1]
-                if f_file_path:
-                    signed_response = supabase.storage \
-                        .from_("imagebucket") \
-                        .create_signed_url(f_file_path, int(timedelta(minutes=180).total_seconds()))
-                    signed_url = signed_response.get("signedURL") if signed_response else None
-                    item["signedImageUrl"] = signed_url
-                else:
-                    item["signedImageUrl"] = None
-
+                    # Lấy full path bên trong bucket, ví dụ: "imagebucket/uploads/file.png"
+                    file_path = clean_url.split("/storage/v1/object/public/")[-1]
+    
+                    # Tách tên bucket và đường dẫn file
+                    parts = file_path.split("/", 1)
+                    if len(parts) == 2:
+                        bucket_name, file_path_inside_bucket = parts
+                        signed_response = supabase.storage \
+                            .from_(bucket_name) \
+                            .create_signed_url(file_path_inside_bucket, int(timedelta(minutes=180).total_seconds()))
+    
+                        signed_url = signed_response.get("signedURL") if signed_response else None
+    
+                item["signedImageUrl"] = signed_url
+    
             return history
-
+    
         except Exception as e:
             print(f"Error retrieving history with signed image URLs: {e}")
             return []
+
 
     @staticmethod
     def get_signed_image_url(user_id: str) -> str | None:
