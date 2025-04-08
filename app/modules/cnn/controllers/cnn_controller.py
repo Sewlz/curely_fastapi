@@ -21,3 +21,12 @@ def get_history(user = Depends(auth_guard)):
         return cnn_service.get_prediction_history(user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching history: {str(e)}")
+    
+@router.delete("/history/{diagnosis_id}")
+def delete_history(diagnosis_id: str, user=Depends(auth_guard)):
+    try:
+        user_id = user.get("uid")
+        return cnn_service.delete_user_history(user_id, diagnosis_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting history: {str(e)}")
+
