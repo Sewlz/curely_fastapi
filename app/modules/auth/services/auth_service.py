@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from google.oauth2 import id_token
+from google.auth.transport.requests import Request
 # Load biến môi trường từ file .env
 load_dotenv()
 
@@ -110,7 +111,7 @@ class AuthService:
             # ✅ Verify token với Google
             idinfo = id_token.verify_oauth2_token(
                 id_token_str, 
-                requests.Request(), 
+                Request(), 
                 "968583952916-4viga6hcqn696fa3devfo0f7rt05s5p3.apps.googleusercontent.com"
             )
 

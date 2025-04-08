@@ -49,6 +49,8 @@ class UserService:
 
         except Exception as e:
             print(f"❌ Exception while verifying current password: {e}")
+            if "Invalid login credentials" in str(e):
+                raise HTTPException(status_code=401, detail="Current password is incorrect.")
             # Nếu message từ Supabase có nội dung, trả về luôn để debug dễ
             if hasattr(e, "message"):
                 raise HTTPException(status_code=401, detail=str(e.message))
