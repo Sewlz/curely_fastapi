@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Request
 from app.modules.user.services.user_service import UserService 
-from app.modules.user.schemas.user_schema import UserCreate, UserUpdate
+from app.modules.user.schemas.user_schema import UserCreate, UserUpdate ,UpdatePasswordSchema
 from app.common.security.auth import auth_guard  # Bảo vệ route
 
 router = APIRouter()
@@ -48,22 +48,37 @@ async def get_user(
 
 # API endpoint để thay đổi mật khẩu người dùng
 @router.put("/update_password", response_model=dict)
-async def update_password(request: Request, user=Depends(auth_guard), new_password: str = None):
-    # Lấy user_id từ token đã được xác thực qua request.state.user
-    user_id = request.state.user.get("uid")  # Lấy uid từ token
-    
-    if not user_id:
-        raise HTTPException(status_code=400, detail="User ID not found in token.")
-    
-    if not new_password:
-        raise HTTPException(status_code=400, detail="New password is required.")
-    
+def update_password(
+    request: Request,
+    data: UpdatePasswordSchema,
+    user = Depends(auth_guard),  # chạy để gán request.state.user
+):
     try:
-        # Gọi hàm để thay đổi mật khẩu người dùng
-        UserService.update_user_password(user_id, new_password)
-    except HTTPException as e:
-        raise e
-    return {"message": "Password updated successfully."}
+        uid = request.state.user.get("uid")
+        email = request.state.user.get("email")
+
+        # 🧾 In log để kiểm tra thông tin lấy từ token
+        print(f"🔍 DEBUG - UID: {uid}")
+        print(f"🔍 DEBUG - Email: {email}")
+
+        if not uid or not email:
+            raise HTTPException(status_code=400, detail="User info missing from token.")
+
+        return UserService.update_password(
+            uid=uid,
+            email=email,
+            current_password=data.current_password,
+            new_password=data.new_password,
+        )        
+    except HTTPException as http_exc:
+        # ✅ Trả lại lỗi gốc không bị ghi đè
+        raise http_exc
+
+    except Exception as e:
+        # ❌ Chỉ bắt lỗi không rõ nguyên nhân
+        print(f"❌ Unexpected error in update_password: {str(e)}")
+        raise HTTPException(status_code=500, detail="Something went wrong while updating password.")
+
 
 # API endpoint để xóa người dùng
 @router.delete("/delete_user", response_model=dict)

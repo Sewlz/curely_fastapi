@@ -1,11 +1,11 @@
 from supabase import create_client
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, requests
 from app.modules.auth.repositories.auth_repository import AuthRepository
 from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema
 import os
 from dotenv import load_dotenv
 from datetime import datetime
-
+from google.oauth2 import id_token
 # Load biến môi trường từ file .env
 load_dotenv()
 
@@ -104,39 +104,34 @@ class AuthService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
     
-
     @staticmethod
-    def login_with_google(id_token: str):
-        """ Xác thực người dùng qua Google ID token """
-        
+    def login_with_google(id_token_str: str):
         try:
-            # Gửi ID token lên Supabase để xác thực
-            response = supabase.auth.sign_in_with_oauth({
-                "provider": "google",
-                "id_token": id_token
-            })
-            
-            # Kiểm tra lỗi từ Supabase
-            if hasattr(response, "error") and response.error:
-                raise HTTPException(status_code=400, detail=response.error.message)
-            
-            # Nếu không có session hoặc access token, báo lỗi
-            if not response.session or not response.session.access_token:
-                raise HTTPException(status_code=400, detail="Failed to retrieve tokens after Google login")
-            
-            # Trả về thông tin người dùng và token
-            user = response.user
+            # ✅ Verify token với Google
+            idinfo = id_token.verify_oauth2_token(
+                id_token_str, 
+                requests.Request(), 
+                "968583952916-4viga6hcqn696fa3devfo0f7rt05s5p3.apps.googleusercontent.com"
+            )
+
+            # ✅ Trích xuất thông tin người dùng
+            user_id = idinfo.get("sub")        # Unique user ID
+            email = idinfo.get("email")
+            name = idinfo.get("name")
+            picture = idinfo.get("picture")
+
+            # 🔒 Có thể lưu vào DB, tạo session hoặc JWT tuỳ bạn
             return {
                 "message": "User logged in successfully",
-                "uid": user.id,
-                "email": user.email,
+                "uid": user_id,
+                "email": email,
+                "name": name,
+                "picture": picture,
                 "role": "user",
-                "idToken": response.session.access_token,  # Access token
-                "refreshToken": response.session.refresh_token  # Refresh token
             }
-        
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+
+        except ValueError as e:
+            raise HTTPException(status_code=401, detail="Invalid Google ID token")
     
     @staticmethod
     def forgot_password(email: str):

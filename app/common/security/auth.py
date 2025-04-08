@@ -27,18 +27,21 @@ class AuthGuard:
             payload = jwt.decode(token, options={"verify_signature": False})  # KHÔNG dùng verify_signature trên client
             user_id = payload.get("sub")
             role = payload.get("role", "user")
+            email = payload.get("email") 
 
             if not user_id:
                 raise HTTPException(status_code=401, detail="Invalid token payload")
 
             # In ra thông tin người dùng trên console
-            print(f"Authenticated User ID: {user_id}, Role: {role}")
+            print(f"Authenticated User ID: {user_id}, Role: {role}, email: {email}" )
 
             # Thêm thông tin người dùng vào request.state
-            request.state.user = {"uid": user_id, "role": role}
+            request.state.user = {"uid": user_id, "role": role,  "email": email}
+
+
 
             # Trả về thông tin người dùng
-            return {"uid": user_id, "role": role}
+            return {"uid": user_id, "role": role, "email": email}
 
         except jwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token has expired")

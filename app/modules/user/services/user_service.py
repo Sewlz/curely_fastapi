@@ -4,11 +4,13 @@ from supabase import create_client
 from app.modules.user.repositories.user_repository import UserRepository
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate
 # Cấu hình URL và key từ biến môi trường hoặc trực tiếp
-SUPABASE_URL = os.getenv("SUPABASE_URL")  # Hoặc đặt giá trị trực tiếp
-SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # Hoặc đặt giá trị trực tiếp
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-# Tạo client Supabase
-supabase = create_client(SUPABASE_URL, SERVICE_ROLE_KEY)
+supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
 
 class UserService:
     @staticmethod
@@ -25,14 +27,41 @@ class UserService:
     
         
     # Hàm để thay đổi mật khẩu người dùng
-    def update_user_password(user_id: str, new_password: str):
+    @staticmethod
+    def update_password(uid: str, email: str, current_password: str, new_password: str):
+        if not email:
+            raise HTTPException(status_code=400, detail="Email not found in token.")
+
+        if not current_password or not new_password:
+            raise HTTPException(status_code=400, detail="Current and new passwords are required.")
+
+        # ✅ 1. Xác thực mật khẩu hiện tại
         try:
-            # Cập nhật mật khẩu mới cho người dùng trong Supabase
-            supabase.auth.admin.update_user_by_id(user_id, {
-                "password": new_password
+            auth_response = supabase.auth.sign_in_with_password({
+                "email": email,
+                "password": current_password
             })
+
+            # Check kỹ hơn
+            if not auth_response or not getattr(auth_response, "user", None):
+                print("❌ Invalid current password (no user returned)")
+                raise HTTPException(status_code=401, detail="Current password is incorrect.")
+
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error updating password: {str(e)}")
+            print(f"❌ Exception while verifying current password: {e}")
+            # Nếu message từ Supabase có nội dung, trả về luôn để debug dễ
+            if hasattr(e, "message"):
+                raise HTTPException(status_code=401, detail=str(e.message))
+            raise HTTPException(status_code=401, detail="Current password is incorrect.")
+
+        # ✅ 2. Đổi mật khẩu mới bằng auth client
+        try:
+            response = supabase.auth.update_user({"password": new_password})
+        except Exception as e:
+            print(f"❌ Supabase update error: {e}")
+            raise HTTPException(status_code=500, detail="Failed to update password.")
+
+        return {"message": "Password updated successfully."}
         
     # Hàm để xóa người dùng
     def delete_user(user_id: str):
@@ -44,4 +73,6 @@ class UserService:
             supabase.auth.admin.delete_user(user_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
+                   
+
                    
