@@ -71,5 +71,14 @@ class CNNService:
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        
+    @staticmethod
+    def delete_user_history(user_id: str, diagnosis_id: str):
+        try:
+            return CNNRepository.delete_history_record(user_id, diagnosis_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error deleting history record: {str(e)}")
+
+
 
 
