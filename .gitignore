@@ -29,6 +29,9 @@ __pycache__/
 # Docker
 docker-compose.override.yml
 
+# Base Model
+app/model_hub/tiny_llama/
+
 # Jupyter Notebook
 .ipynb_checkpoints/
 

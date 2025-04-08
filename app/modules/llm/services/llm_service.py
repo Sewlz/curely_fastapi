@@ -1,24 +1,28 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+from peft import PeftModel
 from fastapi import HTTPException
 from uuid import uuid4
-from app.modules.llm.config.model_config import MODEL_PATH, MAX_NEW_TOKENS, TEMPERATURE
+from app.modules.llm.config.model_config import MODEL_PATH, ADAPTER_PATH, MAX_NEW_TOKENS, TEMPERATURE
 from app.modules.llm.repositories.llm_repository import LLMRepository
 from app.modules.llm.schemas.llm_schema import ChatMessageSchema
 
 class LLMService:
     def __init__(self):
-        print(f"Loading model from: {MODEL_PATH}")
+        print(f"Loading base model from: {MODEL_PATH}")
+        print(f"Loading adapter from: {ADAPTER_PATH}")
         self.tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-        self.model = AutoModelForCausalLM.from_pretrained(MODEL_PATH, torch_dtype=torch.float16).to('cuda')
+        base_model = AutoModelForCausalLM.from_pretrained(MODEL_PATH, torch_dtype=torch.float16).to('cuda')
+        self.model = PeftModel.from_pretrained(base_model, ADAPTER_PATH, torch_dtype=torch.float16).to('cuda')
 
+    @staticmethod
     def create_session(user_id: str, session_name: str):
         try:
             session_id = LLMRepository.create_session(user_id, session_name)
             return session_id
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")
-        
+    
     def generate_response(self, user_prompt: str, session_id: str, user_id: str) -> str:
         # 1. Save the user message
         user_message = ChatMessageSchema(

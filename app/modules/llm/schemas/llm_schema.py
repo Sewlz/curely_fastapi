@@ -4,7 +4,6 @@ from datetime import datetime
 
 class InputData(BaseModel):
     session_id: str
-    user_id: str
     prompt: str
 
 class OutputData(BaseModel):
@@ -18,8 +17,8 @@ class ChatMessageSchema(BaseModel):
     timestamp: Optional[datetime] = None
 
 class ChatSessionCreate(BaseModel):
-    user_id: str
     session_name: str
+    
 class ChatSession(BaseModel):
     session_id: str
     user_id: str

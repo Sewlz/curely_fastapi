@@ -5,6 +5,7 @@ from app.modules.auth.controllers.auth_controller import router as auth_router
 # from app.modules.llm.controllers.llm_controller import router as llm_router
 from app.modules.admin.controllers.admin_controller import router as admin_router
 from app.modules.user.controllers.user_controller import router as user_router
+
 app = FastAPI(
     title="Curely FastAPI",
     description="Curely Backend Application Using FastAPI",

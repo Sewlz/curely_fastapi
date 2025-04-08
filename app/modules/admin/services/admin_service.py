@@ -1,12 +1,5 @@
 from fastapi import HTTPException
-from supabase import create_client
-import os
-# Cấu hình URL và key từ biến môi trường hoặc trực tiếp
-SUPABASE_URL = os.getenv("SUPABASE_URL")  # Hoặc đặt giá trị trực tiếp
-SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")  # Hoặc đặt giá trị trực tiếp
-
-# Tạo client Supabase
-supabase = create_client(SUPABASE_URL, SERVICE_ROLE_KEY)
+from app.common.database.supabase import supabase
 
 
 class AdminService:

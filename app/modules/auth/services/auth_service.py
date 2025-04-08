@@ -3,20 +3,8 @@ from fastapi import HTTPException, Request, requests
 from app.modules.auth.repositories.auth_repository import AuthRepository
 from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema
 import os
-from dotenv import load_dotenv
 from datetime import datetime
-from google.oauth2 import id_token
-from google.auth.transport.requests import Request
-# Load biến môi trường từ file .env
-load_dotenv()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")  # Client API Key
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
-
-
-# Khởi tạo Supabase client
-supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+from app.common.database.supabase import supabase
 
 class AuthService:
     @staticmethod

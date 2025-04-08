@@ -1,20 +1,9 @@
 from fastapi import Request, HTTPException, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from supabase import create_client
 import os
-from dotenv import load_dotenv
 import jwt
 
-# Load biến môi trường
-load_dotenv()
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-
-# Tạo Supabase client
-supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-
 security = HTTPBearer()
-
 class AuthGuard:
     async def __call__(self, request: Request, credentials: HTTPAuthorizationCredentials = Security(security)):
         if not credentials:
