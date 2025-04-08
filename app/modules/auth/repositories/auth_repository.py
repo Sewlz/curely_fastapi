@@ -1,9 +1,6 @@
 from fastapi import Response
 from app.common.database.supabase import supabase
-
-
 supabase_db = supabase
-
 class AuthRepository:
     @staticmethod
     def insert_user_data(user_data: dict):
