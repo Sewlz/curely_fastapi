@@ -23,6 +23,20 @@ class LLMService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")
     
+    def get_user_sessions(self, user_id: str,):
+        try:
+            session_id = LLMRepository.get_user_sessions(user_id)
+            return session_id
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")
+
+    def get_latest_session(self, user_id: str,):
+        try:
+            session_id = LLMRepository.get_latest_session(user_id)
+            return session_id
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")
+
     def generate_response(self, user_prompt: str, session_id: str, user_id: str) -> str:
         # 1. Save the user message
         user_message = ChatMessageSchema(
@@ -70,5 +84,5 @@ class LLMService:
     @staticmethod
     def get_chat_messages(session_id: str, user_id: str):
         messages = LLMRepository.get_session_messages(session_id)
-        user_messages = [msg for msg in messages if msg.get("userId") == user_id]
+        user_messages = [msg for msg in messages if msg.get("userId") == str(user_id)]
         return user_messages

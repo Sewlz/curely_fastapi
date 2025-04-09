@@ -24,7 +24,6 @@ async def create_session(session: ChatSessionCreate, user=Depends(auth_guard)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")
 
-
 @router.get("/session/{session_id}/messages")
 async def get_session_messages(session_id: str, user = Depends(auth_guard)):
     try:
@@ -33,3 +32,21 @@ async def get_session_messages(session_id: str, user = Depends(auth_guard)):
         return {"sessionId": session_id, "userId": user_id, "messages": messages}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch messages: {str(e)}")
+
+@router.get("/user/session/")
+async def get_user_sessions(user = Depends(auth_guard)):
+    try:
+        user_id = user.get("uid")
+        sessions = model_service.get_user_sessions(user_id)
+        return {"userId": user_id, "sessions": sessions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch user sessions: {str(e)}")
+    
+@router.get("/user/latest_session/")
+async def get_latest_session(user = Depends(auth_guard)):
+    try:
+        user_id = user.get("uid")
+        session_id = model_service.get_latest_session(user_id)
+        return {"sessionId": session_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch latest session: {str(e)}")

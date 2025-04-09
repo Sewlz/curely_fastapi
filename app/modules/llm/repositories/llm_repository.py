@@ -32,6 +32,28 @@ class LLMRepository:
             "created_at": datetime.now().isoformat()
         }).execute()
         return session_id
+    
+    @staticmethod
+    def get_user_sessions(user_id: str) -> str:
+        sessions = supabase.table("chatSessions").select("*").eq("userId", user_id).order("created_at", desc=True).execute()
+        return sessions
+    
+    @staticmethod
+    def get_latest_session(user_id: str) -> str:
+        response = (
+            supabase
+            .table("chatSessions")
+            .select("sessionId")
+            .eq("userId", user_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        data = response.data
+        if data and len(data) > 0:
+            return data[0]["sessionId"]
+        raise ValueError("No sessions found for the given user.")
+
 
     @staticmethod
     def get_session_messages(session_id: str):
