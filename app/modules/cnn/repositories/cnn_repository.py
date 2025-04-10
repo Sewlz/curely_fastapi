@@ -50,26 +50,11 @@ class CNNRepository:
             history = result.data
 
             for item in history:
-                raw_url = item.get("mriImageUrl")
-                signed_url = None
-
-                if raw_url and "/storage/v1/object/public/imagebucket/" in raw_url:
-                    try:
-                        clean_url = raw_url.split('?')[0]
-                        file_path_inside_bucket = clean_url.split("/storage/v1/object/public/imagebucket/")[-1]
-                        bucket_name = "imagebucket"
-
-                        print(f"Bucket: {bucket_name}, Path inside: {file_path_inside_bucket}")
-
-                        # Lấy public URL nếu bucket đang ở chế độ public
-                        signed_response = supabase.storage \
-                            .from_(bucket_name) \
-                            .get_public_url(file_path_inside_bucket)
-
-                        signed_url = signed_response if signed_response else None
-
-                    except Exception as sign_err:
-                        print(f"[ERROR] Lỗi tạo signed URL: {sign_err}")
+                try:
+                    signed_url = CNNRepository.get_signed_image_url(user_id)
+                except Exception as sign_err:
+                    print(f"[ERROR] Lỗi tạo signed URL: {sign_err}")
+                    signed_url = None
 
                 item["signedImageUrl"] = signed_url
 
@@ -78,10 +63,6 @@ class CNNRepository:
         except Exception as e:
             print(f"Error retrieving history with signed image URLs: {e}")
             return []
-
-
-
-
 
     @staticmethod
     def get_signed_image_url(user_id: str) -> str | None:
@@ -99,7 +80,7 @@ class CNNRepository:
 
             # 2. Extract the file path from the public image URL
             image_url = result.data[0]["mriImageUrl"]
-            file_path = image_url.split("/object/public/")[-1]
+            file_path = image_url.split("/object/public/imagebucket")[-1]
             if not file_path:
                 raise ValueError("Could not parse file path from image URL")
 
