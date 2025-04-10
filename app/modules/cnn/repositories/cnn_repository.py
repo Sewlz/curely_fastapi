@@ -11,25 +11,34 @@ class CNNRepository:
     @staticmethod
     def save_diagnosis(user_id: str, image_url: str, prediction: str, confidence: float):
         diagnosis_id = str(uuid.uuid4())
-        diagnosed_at = datetime.utcnow().isoformat()
+        timestamp = datetime.utcnow().isoformat()
 
         try:
+            result = supabase.table("diagnosisHistory").select("historyId").eq("userId", user_id).limit(1).execute()
+
+            if result.data:
+                # If the user has history
+                history_id = result.data[0]['historyId']
+            else:
+                # If user has no history then create new history
+                history_id = str(uuid.uuid4())
+                supabase.table("diagnosisHistory").insert({
+                    "historyId": history_id,
+                    "userId": user_id,
+                    "updatedAt": timestamp
+                }).execute()
+
+            # save data to table 'diagnoses'
             record = DiagnosisRecord(
                 diagnosisId=diagnosis_id,
-                userId=user_id,
+                historyId=history_id,
                 mriImageUrl=image_url,
                 aiPrediction=prediction,
                 confidenceScore=confidence,
-                diagnosedAt=diagnosed_at
+                diagnosedAt=timestamp
             )
 
             supabase.table("diagnoses").insert(record.dict()).execute()
-
-            # supabase.table("diagnosisHistory").insert({
-            #     "historyId": str(uuid.uuid4()),
-            #     "diagnosisId": diagnosis_id,
-            #     "updatedAt": diagnosed_at
-            # }).execute()
 
         except APIError as e:
             print("Supabase API Error:", e)
@@ -41,12 +50,18 @@ class CNNRepository:
     def get_user_history(user_id: str):
         try:
             user_uuid = str(UUID(user_id))
+
+            hitory_result = supabase.table('diagnosisHistory').select('historyId').eq("userId", user_uuid).execute()
+            if not hitory_result.data:
+                return []
+            
+            historyId = [entry['historyId'] for entry in hitory_result.data]
             result = supabase.table("diagnoses") \
                 .select("*") \
-                .eq("userId", user_uuid) \
+                .in_("historyId", historyId) \
                 .order("diagnosedAt", desc=True) \
                 .execute()
-
+            
             history = result.data
 
             for item in history:
@@ -97,22 +112,21 @@ class CNNRepository:
 
 
     @staticmethod
-    def delete_history_record(self, diagnosis_id: str):
-        # 1. Xoá bảng diagnosisHistory trước
-        history_result = supabase.table("diagnosis") \
-            .delete() \
-            .eq("diagnosisId", diagnosis_id) \
-            .execute()
+    def delete_history_record(user_id: str, diagnosis_id: str):
+        # check diagnosis_id have exsist in user
+        result = supabase.table('diagnoses').select("diagnosisId, historyId").eq("diagnosisId", diagnosis_id)
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi")
+        
+        diagnosis = result.data[0]
+        history_id = diagnosis["historyId"]
 
-        # Kiểm tra có xóa được gì không
-        if not history_result.data:
-            raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi trong diagnosisHistory")
+        history_result = supabase.table("diagnosisHistory").select("userId").eq("historyId", history_id).execute()
+        if not history_result.data or history_result.data[0]["userId"] != user_id:
+            raise HTTPException(status_code=403, detail="Bạn không có quyền xóa bản ghi này")
 
-        # 2. Xoá bảng diagnoses
-        diagnosis_result = supabase.table("diagnoses") \
-            .delete() \
-            .eq("diagnosisId", diagnosis_id) \
-            .execute()
+        # delete data in table diagnoses
+        diagnosis_result = supabase.table('diagnoses').delete().eq("diagnosisId", diagnosis_id).execute()
 
         if not diagnosis_result.data:
             raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi trong diagnoses")

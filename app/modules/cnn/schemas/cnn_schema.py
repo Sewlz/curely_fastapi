@@ -8,7 +8,7 @@ class PredictionResult(BaseModel):
 
 class DiagnosisRecord(BaseModel):
     diagnosisId: str
-    userId: str
+    historyId: str
     mriImageUrl: str
     aiPrediction: str
     confidenceScore: float
