@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, requests
 from fastapi.security import HTTPBearer
-from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema , GoogleLoginSchema ,ForgotPasswordSchema
+from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema , GoogleLoginSchema ,ForgotPasswordSchema ,FacebookLoginSchema
 from app.modules.auth.services.auth_service import AuthService
 router = APIRouter()
 security = HTTPBearer()
@@ -89,6 +89,16 @@ def login_google(payload: GoogleLoginSchema, auth_service: AuthService = Depends
     return result
 
 
+@router.post("/login-facebook")
+def login_with_facebook(payload: FacebookLoginSchema):
+    try:
+        return AuthService.login_with_facebook(payload.id_token)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Something went wrong while logging in with Facebook")
+    
+    
 
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordSchema, auth_service: AuthService = Depends()):
