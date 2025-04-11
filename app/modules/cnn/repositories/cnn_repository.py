@@ -2,7 +2,9 @@ import uuid
 from datetime import datetime, timedelta
 from app.common.database.supabase import supabase
 from app.modules.cnn.schemas.cnn_schema import DiagnosisRecord
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from postgrest.exceptions import APIError
+import time
 from uuid import UUID
 from fastapi import HTTPException
 
@@ -50,66 +52,76 @@ class CNNRepository:
     def get_user_history(user_id: str):
         try:
             user_uuid = str(UUID(user_id))
+            history_result = supabase.table('diagnosisHistory').select('historyId').eq("userId", user_uuid).execute()
 
-            hitory_result = supabase.table('diagnosisHistory').select('historyId').eq("userId", user_uuid).execute()
-            if not hitory_result.data:
+            if not history_result.data:
                 return []
-            
-            historyId = [entry['historyId'] for entry in hitory_result.data]
+
+            history_ids = [entry['historyId'] for entry in history_result.data]
             result = supabase.table("diagnoses") \
                 .select("*") \
-                .in_("historyId", historyId) \
+                .in_("historyId", history_ids) \
                 .order("diagnosedAt", desc=True) \
                 .execute()
-            
+
             history = result.data
 
-            for item in history:
-                try:
-                    signed_url = CNNRepository.get_signed_image_url(user_id)
-                except Exception as sign_err:
-                    print(f"[ERROR] Lỗi tạo signed URL: {sign_err}")
-                    signed_url = None
+            # Get file list once
+            folder_path = "mri"
+            file_objs = supabase.storage.from_("imagebucket").list(folder_path)
+            file_list = set(f["name"] for f in file_objs)
 
-                item["signedImageUrl"] = signed_url
+            # Generate signed URLs concurrently
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                future_map = {
+                    executor.submit(CNNRepository.get_signed_image_url, item["mriImageUrl"], file_list): item
+                    for item in history
+                }
+
+                for future in as_completed(future_map):
+                    item = future_map[future]
+                    try:
+                        signed_url = future.result()
+                    except Exception as e:
+                        print(f"[ERROR] Signed URL future failed: {e}")
+                        signed_url = None
+
+                    item["signedImageUrl"] = signed_url
 
             return history
 
         except Exception as e:
-            print(f"Error retrieving history with signed image URLs: {e}")
+            print(f"[ERROR] Retrieving history with signed image URLs: {e}")
             return []
-
+    
     @staticmethod
-    def get_signed_image_url(user_id: str) -> str | None:
+    def get_signed_image_url(image_url: str, file_list: set, retries: int = 2) -> str | None:
         try:
-            # 1. Get the latest diagnosis record for the user
-            result = supabase.table("diagnoses") \
-                .select("mriImageUrl") \
-                .eq("userId", user_id) \
-                .order("diagnosedAt", desc=True) \
-                .limit(1) \
-                .execute()
+            image_url = image_url.split("?")[0]
+            filename = image_url.split("/")[-1]
+            folder_path = "mri"
+            file_path = f"{folder_path}/{filename}"
 
-            if not result.data:
+            if filename not in file_list:
+                print(f"[SKIP] File '{filename}' not found in folder '{folder_path}'")
                 return None
 
-            # 2. Extract the file path from the public image URL
-            image_url = result.data[0]["mriImageUrl"]
-            file_path = image_url.split("/object/public/imagebucket")[-1]
-            if not file_path:
-                raise ValueError("Could not parse file path from image URL")
+            for attempt in range(retries):
+                try:
+                    signed_response = supabase.storage \
+                        .from_("imagebucket") \
+                        .create_signed_url(file_path, int(timedelta(minutes=180).total_seconds()))
+                    
+                    return signed_response.get("signedURL") if signed_response else None
+                except Exception as e:
+                    print(f"[RETRY {attempt+1}] Signed URL error: {e}")
+                    time.sleep(0.5)
 
-            # 3. Generate signed URL (valid for 180 minutes)
-            signed_response = supabase.storage \
-                .from_("imagebucket") \
-                .create_signed_url(file_path, int(timedelta(minutes=180).total_seconds()))
-
-            return signed_response.get("signedURL") if signed_response else None
-
-        except Exception as e:
-            print(f"Error generating signed image URL: {e}")
             return None
 
+        except Exception as e:
+            print(f"[ERROR] Generating signed image URL: {e}")
+            return None
 
     @staticmethod
     def delete_history_record(user_id: str, diagnosis_id: str):
@@ -132,5 +144,4 @@ class CNNRepository:
             raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi trong diagnoses")
 
         return {"message": "Delete Successful!"}
-
 
