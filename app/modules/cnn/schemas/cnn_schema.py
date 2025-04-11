@@ -3,8 +3,8 @@ from typing import List, Optional
 
 class PredictionResult(BaseModel):
     message: str
-    prediction: str
-    confidence: float
+    aiPrediction: str
+    confidenceScore: float
 
 class DiagnosisRecord(BaseModel):
     diagnosisId: str
