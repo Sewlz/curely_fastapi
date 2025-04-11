@@ -66,8 +66,8 @@ class CNNService:
 
             return PredictionResult(
                 message="Prediction successful",
-                prediction=predicted_class,
-                confidence=confidence
+                aiPrediction=predicted_class,
+                confidenceScore=confidence
             )
 
         except Exception as e:

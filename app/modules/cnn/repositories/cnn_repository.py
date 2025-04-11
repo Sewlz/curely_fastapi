@@ -126,7 +126,7 @@ class CNNRepository:
     @staticmethod
     def delete_history_record(user_id: str, diagnosis_id: str):
         # check diagnosis_id have exsist in user
-        result = supabase.table('diagnoses').select("diagnosisId, historyId").eq("diagnosisId", diagnosis_id)
+        result = supabase.table('diagnoses').select("diagnosisId, historyId").eq("diagnosisId", diagnosis_id).execute()
         if not result.data:
             raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi")
         
