@@ -53,7 +53,8 @@ class CNNService:
 
             # Upload to Supabase
             try:
-                supabase.storage.from_("imagebucket").upload(file_id, tmp_path)
+                file_path = f"mri/{file_id}"
+                supabase.storage.from_("imagebucket").upload(file_path, tmp_path)
             except SupabaseException as e:
                 raise HTTPException(status_code=500, detail=f"Supabase upload failed: {str(e)}")
 
