@@ -60,7 +60,7 @@ class CNNService:
 
             os.remove(tmp_path)
 
-            public_url = supabase.storage.from_("imagebucket").get_public_url(file_id)
+            public_url = supabase.storage.from_("imagebucket").get_public_url(f"mri/{file_id}")
 
             CNNRepository.save_diagnosis(user_id, public_url, predicted_class, confidence)
 
