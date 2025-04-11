@@ -1,10 +1,11 @@
-from supabase import create_client
-from fastapi import HTTPException, Request, requests
+from fastapi import HTTPException, Request
 from app.modules.auth.repositories.auth_repository import AuthRepository
 from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema
-import os
 from datetime import datetime
 from app.common.database.supabase import supabase
+from google.oauth2 import id_token
+from google.auth.transport.requests import Request 
+import requests
 
 class AuthService:
     @staticmethod
@@ -121,6 +122,44 @@ class AuthService:
 
         except ValueError as e:
             raise HTTPException(status_code=401, detail="Invalid Google ID token")
+    
+    @staticmethod
+    def login_with_facebook(id_token: str):
+        try:
+            # 👇 Log token nhận được từ frontend
+            print("📥 Received Facebook Access Token (id_token):", id_token)
+
+            response = requests.get(
+                "https://graph.facebook.com/me",
+                params={
+                    "fields": "id,name,email,picture",
+                    "access_token": id_token
+                }
+            )
+            data = response.json()
+
+            if "error" in data:
+                print("❌ Facebook API error:", data["error"])  # 👈 log lỗi rõ ràng
+                raise HTTPException(status_code=401, detail="Invalid Facebook access token")
+
+            user_id = data.get("id")
+            name = data.get("name")
+            email = data.get("email")
+            picture = data.get("picture", {}).get("data", {}).get("url")
+
+            return {
+                "message": "User logged in successfully with Facebook",
+                "uid": user_id,
+                "email": email,
+                "name": name,
+                "picture": picture,
+                "role": "user"
+            }
+
+        except Exception as e:
+            print("🚨 Exception occurred during Facebook login:", str(e))  # 👈 debug exception
+            raise HTTPException(status_code=500, detail="Error verifying Facebook token")
+
     
     @staticmethod
     def forgot_password(email: str):
