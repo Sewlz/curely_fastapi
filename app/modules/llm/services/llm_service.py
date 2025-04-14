@@ -1,11 +1,11 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+from uuid import uuid4
 from peft import PeftModel
 from fastapi import HTTPException
-from uuid import uuid4
-from app.modules.llm.config.model_config import MODEL_PATH, ADAPTER_PATH, MAX_NEW_TOKENS, TEMPERATURE
-from app.modules.llm.repositories.llm_repository import LLMRepository
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from app.modules.llm.schemas.llm_schema import ChatMessageSchema
+from app.modules.llm.repositories.llm_repository import LLMRepository
+from app.modules.llm.config.model_config import MODEL_PATH, ADAPTER_PATH, MAX_NEW_TOKENS, TEMPERATURE
 
 class LLMService:
     def __init__(self):
@@ -86,3 +86,11 @@ class LLMService:
         messages = LLMRepository.get_session_messages(session_id)
         user_messages = [msg for msg in messages if msg.get("userId") == str(user_id)]
         return user_messages
+
+    @staticmethod
+    def delete_session(session_id: str, user_id: str):
+        try:
+            LLMRepository.delete_session(session_id, user_id)
+            return {"message": "Session deleted successfully."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error deleting session: {str(e)}")

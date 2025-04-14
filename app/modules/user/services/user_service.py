@@ -1,21 +1,18 @@
 import os
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from supabase import create_client
+from app.common.database.supabase import supabase
 from app.modules.user.repositories.user_repository import UserRepository
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate
-# Cấu hình URL và key từ biến môi trường hoặc trực tiếp
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-
 
 class UserService:
     @staticmethod
     def create_user(user_id: str, user_data: UserCreate):
         return UserRepository.add_user(user_id, user_data.dict(exclude_unset=True))
+
+    @staticmethod
+    def update_profile_picture(user_id: str, image: UploadFile):
+        return UserRepository.update_profile_picture(user_id, image)
 
     @staticmethod
     def update_user(user_id: str, update_data: UserUpdate):

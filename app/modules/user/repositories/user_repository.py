@@ -1,5 +1,12 @@
+import os
+import tempfile
+from PIL import Image
+from uuid import uuid4
+from supabase import SupabaseException
+from fastapi import UploadFile, HTTPException
 from app.common.database.supabase import supabase
 from datetime import datetime, date
+
 supabase_db = supabase
 
 class UserRepository:
@@ -18,6 +25,24 @@ class UserRepository:
         if res.data is None:
             raise Exception("Failed to insert user.")
         return {"message": "User added to database successfully"}
+
+    @staticmethod
+    def update_profile_picture(user_id: str, image: UploadFile):
+        file_id = f"{uuid4()}.png"            
+        image.file.seek(0)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+            tmp.write(image.file.read())
+            tmp_path = tmp.name
+
+        try:
+            file_path = f"user_avatar/{file_id}"
+            supabase.storage.from_("userprofile").upload(file_path, tmp_path)
+        except SupabaseException as e:
+            raise HTTPException(status_code=500, detail=f"Supabase upload failed: {str(e)}")
+        os.remove(tmp_path)
+        public_url = supabase.storage.from_("userprofile").get_public_url(f"user_avatar/{file_id}")
+        supabase_db.table("users").update({"profilePicture": public_url}).eq("userId", user_id).execute()
+        return {"message": "Profile picture updated in database successfully "}
 
     @staticmethod
     def update_user(user_id: str, update_data: dict):

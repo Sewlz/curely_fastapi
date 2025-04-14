@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from fastapi import HTTPException
 from app.common.database.supabase import supabase
 from app.modules.llm.schemas.llm_schema import ChatMessageSchema
 
@@ -74,3 +75,14 @@ class LLMRepository:
             "message": message.message,
             "timestamp": datetime.now().isoformat()
         }).execute()
+
+    @staticmethod
+    def delete_session(session_id: str, user_id: str,):
+        try:
+            existing = supabase.table("chatSessions").select("*").eq("userId", user_id).eq("sessionId", session_id).execute()
+            if not existing.data:
+                raise HTTPException(status_code=404, detail="Chat session not found")
+            supabase.table("chatMessages").delete().eq("sessionId", session_id).execute()
+            supabase.table("chatSessions").delete().eq("userId", user_id).eq("sessionId", session_id).execute()  
+        except Exception as e:
+            print(e) 
