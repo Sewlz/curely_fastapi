@@ -1,9 +1,10 @@
 import os
+from fastapi import HTTPException
 from fastapi import HTTPException, UploadFile
 from app.common.database.supabase import supabase
 from app.modules.user.repositories.user_repository import UserRepository
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate
-
+from app.common.database.supabase import supabaseAdmin 
 class UserService:
     @staticmethod
     def create_user(user_id: str, user_data: UserCreate):
@@ -68,7 +69,7 @@ class UserService:
             UserRepository.delete_user(user_id)
             
             # Xóa user khỏi Supabase Authentication
-            supabase.auth.admin.delete_user(user_id)
+            supabaseAdmin.auth.admin.delete_user(user_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
                    
