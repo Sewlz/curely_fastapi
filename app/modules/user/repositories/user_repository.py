@@ -5,6 +5,7 @@ from uuid import uuid4
 from supabase import SupabaseException
 from fastapi import UploadFile, HTTPException
 from app.common.database.supabase import supabase
+from app.common.database.supabase import supabaseAdmin
 from datetime import datetime, date
 
 supabase_db = supabase
@@ -71,8 +72,9 @@ class UserRepository:
 
     @staticmethod
     def delete_user(user_id: str):
-        # Xóa thông tin người dùng khỏi bảng 'users'
-        res = supabase_db.table("users").delete().eq("userId", user_id).execute()
-        if res.data is None:
-            raise Exception("Failed to delete user data.")
-        return {"message": f"User {user_id} data deleted from database successfully."}
+        try:
+            res = supabaseAdmin.table("users").delete().eq("userId", user_id).execute()
+            return {"message": f"User {user_id} deleted from DB."}
+
+        except Exception as e:
+            raise Exception(f"Failed to delete user data: {str(e)}")
