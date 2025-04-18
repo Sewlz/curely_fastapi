@@ -1,15 +1,9 @@
 import os
 from fastapi import HTTPException
-from supabase import create_client
 from app.modules.user.repositories.user_repository import UserRepository
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate
-# Cấu hình URL và key từ biến môi trường hoặc trực tiếp
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-
-supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
-supabase_admin = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+from app.common.database.supabase import supabase
+from app.common.database.supabase import supabaseAdmin
 
 
 class UserService:
@@ -72,7 +66,7 @@ class UserService:
             UserRepository.delete_user(user_id)
             
             # Xóa user khỏi Supabase Authentication
-            supabase.auth.admin.delete_user(user_id)
+            supabaseAdmin.auth.admin.delete_user(user_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
                    
