@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from app.modules.llm.schemas.llm_schema import InputData, OutputData, ChatSessionCreate
-from app.modules.llm.services.llm_service import LLMService
+from fastapi import APIRouter, Depends, HTTPException
 from app.common.security.auth import auth_guard
+from app.modules.llm.services.llm_service import LLMService
+from app.modules.llm.schemas.llm_schema import InputData, OutputData, ChatSessionCreate
 
 router = APIRouter()
 model_service = LLMService()
@@ -50,3 +50,12 @@ async def get_latest_session(user = Depends(auth_guard)):
         return {"sessionId": session_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch latest session: {str(e)}")
+    
+@router.delete("/session/{session_id}")
+async def delete_session(session_id: str, user = Depends(auth_guard)):
+    try:
+        user_id = user.get("uid")
+        model_service.delete_session(session_id, user_id)
+        return {"message": f"Session: {session_id} from user: {user_id} deleted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete session: {str(e)}")

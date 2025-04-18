@@ -53,20 +53,21 @@ class CNNService:
 
             # Upload to Supabase
             try:
-                supabase.storage.from_("imagebucket").upload(file_id, tmp_path)
+                file_path = f"mri/{file_id}"
+                supabase.storage.from_("imagebucket").upload(file_path, tmp_path)
             except SupabaseException as e:
                 raise HTTPException(status_code=500, detail=f"Supabase upload failed: {str(e)}")
 
             os.remove(tmp_path)
 
-            public_url = supabase.storage.from_("imagebucket").get_public_url(file_id)
+            public_url = supabase.storage.from_("imagebucket").get_public_url(f"mri/{file_id}")
 
             CNNRepository.save_diagnosis(user_id, public_url, predicted_class, confidence)
 
             return PredictionResult(
                 message="Prediction successful",
-                prediction=predicted_class,
-                confidence=confidence
+                aiPrediction=predicted_class,
+                confidenceScore=confidence
             )
 
         except Exception as e:

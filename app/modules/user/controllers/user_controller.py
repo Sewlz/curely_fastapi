@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, UploadFile, File
 from app.modules.user.services.user_service import UserService 
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate ,UpdatePasswordSchema
 from app.common.security.auth import auth_guard  # Bảo vệ route
@@ -24,7 +24,6 @@ async def update_user(
     user=Depends(auth_guard)
 ):
     try:
-        # Lấy user_id từ token
         user_id = request.state.user.get("uid")
         return UserService.update_user(user_id, update_data)
     except Exception as e:
@@ -36,7 +35,6 @@ async def get_user(
     user=Depends(auth_guard)
 ):
     try:
-        # Lấy user_id từ token
         user_id = request.state.user.get("uid")
         user_data = UserService.get_user(user_id)
         if not user_data:
@@ -45,19 +43,28 @@ async def get_user(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.put("/update-profile-picture", response_model=dict)
+async def update_profile_picture(
+    request: Request,
+    image: UploadFile = File(...),
+    user=Depends(auth_guard)
+):
+    try:
+        user_id = request.state.user.get("uid")
+        return UserService.update_profile_picture(user_id, image)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-# API endpoint để thay đổi mật khẩu người dùng
 @router.put("/update_password", response_model=dict)
 def update_password(
     request: Request,
     data: UpdatePasswordSchema,
-    user = Depends(auth_guard),  # chạy để gán request.state.user
+    user = Depends(auth_guard), 
 ):
     try:
         uid = request.state.user.get("uid")
         email = request.state.user.get("email")
 
-        # 🧾 In log để kiểm tra thông tin lấy từ token
         print(f"🔍 DEBUG - UID: {uid}")
         print(f"🔍 DEBUG - Email: {email}")
 
@@ -71,7 +78,6 @@ def update_password(
             new_password=data.new_password,
         )        
     except HTTPException as http_exc:
-        # ✅ Trả lại lỗi gốc không bị ghi đè
         raise http_exc
 
     except Exception as e:
