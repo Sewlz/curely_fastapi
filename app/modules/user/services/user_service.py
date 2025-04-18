@@ -1,6 +1,5 @@
 import os
 from fastapi import HTTPException, UploadFile
-from supabase import create_client
 from app.common.database.supabase import supabase
 from app.modules.user.repositories.user_repository import UserRepository
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate

@@ -1,13 +1,16 @@
+import os
+import time
 import uuid
+import tempfile
+from uuid import UUID
+from uuid import uuid4
+from supabase import SupabaseException
 from datetime import datetime, timedelta
+from postgrest.exceptions import APIError
+from fastapi import UploadFile, HTTPException
 from app.common.database.supabase import supabase
 from app.modules.cnn.schemas.cnn_schema import DiagnosisRecord
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from postgrest.exceptions import APIError
-import time
-from uuid import UUID
-from fastapi import HTTPException
-
 
 class CNNRepository:
     @staticmethod
@@ -47,7 +50,31 @@ class CNNRepository:
             raise
 
         return diagnosis_id
+    @staticmethod
+    async def upload_image(image: UploadFile):
+        try:
+            file_id = f"{uuid4()}.png"
+            # Save file temporarily
+            image.file.seek(0)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+                tmp.write(image.file.read())
+                tmp_path = tmp.name
 
+            # Upload to Supabase
+            try:
+                file_path = f"mri/{file_id}"
+                supabase.storage.from_("imagebucket").upload(file_path, tmp_path)
+            except SupabaseException as e:
+                raise HTTPException(status_code=500, detail=f"Supabase upload failed: {str(e)}")
+
+            os.remove(tmp_path)
+
+            public_url = supabase.storage.from_("imagebucket").get_public_url(f"mri/{file_id}")
+            return public_url
+
+        except Exception as e:    
+            raise HTTPException(status_code=500, detail=f"Error uploading image: {str(e)}")
+        
     @staticmethod
     def get_user_history(user_id: str):
         try:

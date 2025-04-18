@@ -1,92 +1,46 @@
-# FastAPI Modular Monolith
+# Curely API – AI-Powered Cancer Diagnosis API
 
-## Project Description
+## 🏥 Introduction
 
-This project is a modular monolith built using FastAPI. It follows a structured architecture with separate modules for authentication, user management, LLM integration, and CNN-based functionalities.
+**Curely API** is the backend system powering the **Curely** – an AI-powered mobile application that supports early detection of **brain cancer** and **kidney cancer**. This backend is developed with **FastAPI** using a modular monolith architecture and integrates AI models (LLM & CNN), authentication, user management, and Supabase for data storage.
 
-## Project Structure
+## 🚀 Core Features
+
+- 🔐 **Authentication**: Secure login, JWT tokens, and role-based access.
+- 👤 **User Management**: Handle patient and doctor profiles.
+- 🧠 **AI Model Integration**:
+  - **LLM**: Chat-based assistant for cancer-related Q&A.
+  - **CNN**: Analyze medical images (MRI for brain, CT for kidney).
+- 🧾 **Medical Record Storage**: Store and manage image uploads and diagnosis history.
+
+## 🛠 Tech Stack
+
+- ⚡ **FastAPI**: High-performance Python web framework.
+- 🧠 **TensorFlow/Keras**: For deep learning-based image analysis.
+- 🧠 **LangChain**: LLM integration for Q&A features.
+- 🔐 **JWT & Role-Based Access**: Secure and customizable access control.
+- 🧩 **Modular Monolith**: Clean and scalable code organization.
+- 🛢 **Supabase**: Scalable cloud database (PostgreSQL) and authentication service.
+
+## 📁 Project Structure
 
 ```
-curely_fastapi/
+Curely_backend/
 │── app/
-│   ├── modules/  # Modular Monolith: Each module is independent
+│   ├── modules/
 │   │   ├── auth/
-│   │   │   ├── controllers/
-│   │   │   │   ├── auth_controller.py
-│   │   │   ├── services/
-│   │   │   │   ├── auth_service.py
-│   │   │   ├── repositories/
-│   │   │   │   ├── auth_repository.py
-│   │   │   ├── schemas/
-│   │   │   │   ├── auth_schema.py
-│   │   │   ├── __init__.py
-│   │   │
 │   │   ├── user/
-│   │   │   ├── controllers/
-│   │   │   │   ├── user_controller.py
-│   │   │   ├── services/
-│   │   │   │   ├── user_service.py
-│   │   │   ├── repositories/
-│   │   │   │   ├── user_repository.py
-│   │   │   ├── schemas/
-│   │   │   │   ├── user_schema.py
-│   │   │   ├── __init__.py
-│   │   │
 │   │   ├── llm/
-│   │   │   ├── controllers/
-│   │   │   │   ├── llm_controller.py
-│   │   │   ├── services/
-│   │   │   │   ├── llm_service.py
-│   │   │   ├── repositories/
-│   │   │   │   ├── llm_repository.py
-│   │   │   ├── schemas/
-│   │   │   │   ├── llm_schema.py
-│   │   │   ├── __init__.py
-│   │   │
 │   │   ├── cnn/
-│   │   │   ├── controllers/
-│   │   │   │   ├── cnn_controller.py
-│   │   │   ├── services/
-│   │   │   │   ├── cnn_service.py
-│   │   │   ├── repositories/
-│   │   │   │   ├── cnn_repository.py
-│   │   │   ├── schemas/
-│   │   │   │   ├── cnn_schema.py
-│   │   │   ├── __init__.py
-│   │
-│   ├── common/  # Shared utilities across modules
-│   │   ├── database/
-│   │   │   ├── firestore.py
-│   │   │   ├── __init__.py
-│   │   ├── security/
-│   │   │   ├── auth.py
-│   │   │   ├── role_based_access.py
-│   │   │   ├── csrf.py
-│   │   │   ├── __init__.py
+│   ├── common/
+│   │   ├── database/  # Supabase connection
+│   │   ├── security/  # Auth, RBAC
 │   │   ├── middlewares/
-│   │   │   ├── request_logging.py
-│   │   │   ├── rate_limiting.py
-│   │   │   ├── __init__.py
 │   │   ├── utils/
-│   │   │   ├── rate_limiter.py
-│   │   │   ├── logging.py
-│   │   │   ├── encryption.py
-│   │   │   ├── __init__.py
-│   │
-│   ├── core/  # Application configuration
-│   │   ├── config.py
-│   │   ├── dependencies.py
-│   │   ├── __init__.py
-│   │
-│   ├── main.py  # FastAPI entry point
+│   ├── core/
+│   ├── main.py
 │
-├── tests/  # Unit & integration tests
-│   ├── test_auth.py
-│   ├── test_user.py
-│   ├── test_llm.py
-│   ├── test_cnn.py
-│   ├── __init__.py
-│
+├── tests/
 ├── .env
 ├── Dockerfile
 ├── docker-compose.yml
@@ -94,71 +48,65 @@ curely_fastapi/
 ├── README.md
 ```
 
-## Installation & Setup
+## 📥 Installation & Usage
 
-### 1. Set Up Virtual Environment (Recommended)
+### 1. Clone the Repository
 
-If you haven't already, create and activate a virtual environment:
+```bash
+git clone https://github.com/Vunghiak3/Curely-Backend.git
+cd Curely-Backend
+```
+
+### 2. Set Up Virtual Environment
 
 ```bash
 python -m venv venv
+source venv/bin/activate  # or venv\Scripts\activate on Windows
 ```
 
-#### On Windows:
-
-```bash
-venv\Scripts\activate
-```
-
-#### On macOS/Linux:
-
-```bash
-source venv/bin/activate
-```
-
-### 2. Install Dependencies
+### 3. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Environment Setup
+### 4. Configure Environment
 
-Create a `.env` file in the root directory and define required environment variables. For example:
+Create a `.env` file in the root directory with your Supabase credentials:
 
 ```
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-secret-key
+SUPABASE_KEY=your-secret-api-key
+SUPABASE_SERVICE_ROLE_KEY=your-secret-service-role-key
+SUPABASE_JWT_SECRE=your-secret-jwt-key
 ```
 
-Make sure your app loads the environment using `python-dotenv`. Add the following to the top of your main file (`main.py` or `app/main.py`):
+And ensure your `main.py` includes:
 
 ```python
 from dotenv import load_dotenv
 load_dotenv()
 ```
 
-### 4. Run FastAPI Server
+### 5. Run the Server
 
-If `main.py` is in the `app/` directory:
+If `main.py` is in `app/`:
 
 ```bash
 uvicorn app.main:app
 ```
 
-If `main.py` is in the root directory:
+Or if it's in the root:
 
 ```bash
 uvicorn main:app
 ```
 
-### 5. API Documentation
-
-Once the server is running, access the API documentation at:
+### 6. Access the API Docs
 
 - Swagger UI: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - Redoc: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
-## Contributing
+---
 
-Pull requests are welcome. For major changes, please open an issue first to discuss the intended modifications.
+✨ **Curely API – Empowering healthcare with AI.**
