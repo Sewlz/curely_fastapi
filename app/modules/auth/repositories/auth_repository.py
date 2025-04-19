@@ -19,10 +19,21 @@ class AuthRepository:
         Lưu hoặc cập nhật thông tin người dùng từ Google / Facebook
         """
         try:
+            # Sử dụng Supabase để upsert (chèn hoặc cập nhật) dữ liệu vào bảng 'users'
             response = supabase_db.table("users") \
-                .upsert(user_data, on_conflict="userId") \
+                .upsert(user_data, on_conflict=["userId"]) \
                 .execute()
-            print("✅ User data upserted:", response)
+
+            # Kiểm tra kết quả từ Supabase
+            if response.data:
+                print("✅ User data upserted:", response.data)
+            elif response.error:
+                print("🚨 Error from Supabase:", response.error)
+                raise HTTPException(status_code=500, detail="Error saving user data")
+            else:
+                print("🚨 Unexpected response:", response)
+                raise HTTPException(status_code=500, detail="Unexpected error saving user data")
+
         except Exception as e:
             print("🚨 Error saving user data:", str(e))
             raise HTTPException(status_code=500, detail="Error saving user data")

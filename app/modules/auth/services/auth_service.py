@@ -6,7 +6,7 @@ from app.common.database.supabase import supabase
 from google.oauth2 import id_token
 from google.auth.transport.requests import Request 
 import requests
-from jose import jwt
+import uuid
 class AuthService:
     @staticmethod
     def register_user(user_data: RegisterUserSchema):
@@ -101,11 +101,11 @@ class AuthService:
             idinfo = id_token.verify_oauth2_token(
                 id_token_str,
                 Request(),
-                "968583952916-4viga6hcqn696fa3devfo0f7rt05s5p3.apps.googleusercontent.com"
+                "463830006871-2m8oc6d00tnne7p63g61ggd442t9upi2.apps.googleusercontent.com"
             )
 
             # ✅ Trích xuất thông tin người dùng
-            user_id = idinfo.get("sub")
+            user_id = idinfo.get("sub")  # Google user ID (not UUID)
             email = idinfo.get("email")
             name = idinfo.get("name")
             picture = idinfo.get("picture")
@@ -113,13 +113,13 @@ class AuthService:
             if not email:
                 raise HTTPException(status_code=400, detail="Email not found in token")
 
+            # ✅ Tạo UUID từ user_id của Google (đảm bảo UUID duy nhất và cố định cho user)
+            user_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
+
             # ✅ Chuẩn bị dữ liệu để lưu vào Supabase
             user_data_to_insert = {
-                "userId": user_id,
-                "name": name,
+                "userId": user_uuid,  # Sử dụng UUID cố định thay vì user_id
                 "email": email,
-                "profilePicture": picture,
-                "created_at": datetime.utcnow().isoformat()
             }
 
             # ✅ Lưu vào DB (upsert)
@@ -127,7 +127,7 @@ class AuthService:
 
             return {
                 "message": "User logged in successfully with Google",
-                "uid": user_id,
+                "uid": user_uuid,
                 "email": email,
                 "name": name,
                 "picture": picture,
