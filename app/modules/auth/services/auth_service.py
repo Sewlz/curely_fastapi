@@ -101,7 +101,7 @@ class AuthService:
             idinfo = id_token.verify_oauth2_token(
                 id_token_str,
                 Request(),
-                "463830006871-2m8oc6d00tnne7p63g61ggd442t9upi2.apps.googleusercontent.com"
+                "968583952916-4viga6hcqn696fa3devfo0f7rt05s5p3.apps.googleusercontent.com"
             )
 
             # ✅ Trích xuất thông tin người dùng
