@@ -82,7 +82,7 @@ class LLMRepository:
             existing = supabase.table("chatSessions").select("*").eq("userId", user_id).eq("sessionId", session_id).execute()
             if not existing.data:
                 raise HTTPException(status_code=404, detail="Chat session not found")
-            supabase.table("chatMessages").delete().eq("sessionId", session_id).execute()
-            supabase.table("chatSessions").delete().eq("userId", user_id).eq("sessionId", session_id).execute()  
+            response = supabase.table("chatSessions").delete().eq("userId", user_id).eq("sessionId", session_id).execute()  
+            print(response)
         except Exception as e:
             print(e) 
