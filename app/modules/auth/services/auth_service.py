@@ -6,7 +6,7 @@ from app.common.database.supabase import supabase
 from google.oauth2 import id_token
 from google.auth.transport.requests import Request 
 import requests
-
+from jose import jwt
 class AuthService:
     @staticmethod
     def register_user(user_data: RegisterUserSchema):
@@ -97,22 +97,36 @@ class AuthService:
     @staticmethod
     def login_with_google(id_token_str: str):
         try:
-            # ✅ Verify token với Google
+            # ✅ Xác minh ID token với Google
             idinfo = id_token.verify_oauth2_token(
-                id_token_str, 
-                Request(), 
+                id_token_str,
+                Request(),
                 "968583952916-4viga6hcqn696fa3devfo0f7rt05s5p3.apps.googleusercontent.com"
             )
 
             # ✅ Trích xuất thông tin người dùng
-            user_id = idinfo.get("sub")        # Unique user ID
+            user_id = idinfo.get("sub")
             email = idinfo.get("email")
             name = idinfo.get("name")
             picture = idinfo.get("picture")
 
-            # 🔒 Có thể lưu vào DB, tạo session hoặc JWT tuỳ bạn
+            if not email:
+                raise HTTPException(status_code=400, detail="Email not found in token")
+
+            # ✅ Chuẩn bị dữ liệu để lưu vào Supabase
+            user_data_to_insert = {
+                "userId": user_id,
+                "name": name,
+                "email": email,
+                "profilePicture": picture,
+                "created_at": datetime.utcnow().isoformat()
+            }
+
+            # ✅ Lưu vào DB (upsert)
+            AuthRepository.upsert_oauth_user_data(user_data_to_insert)
+
             return {
-                "message": "User logged in successfully",
+                "message": "User logged in successfully with Google",
                 "uid": user_id,
                 "email": email,
                 "name": name,
@@ -121,8 +135,12 @@ class AuthService:
             }
 
         except ValueError as e:
+            print("❌ Token verification failed:", str(e))
             raise HTTPException(status_code=401, detail="Invalid Google ID token")
-    
+        except Exception as e:
+            print("🚨 Exception during login_with_google:", str(e))
+            raise HTTPException(status_code=500, detail="Internal Server Error")
+        
     @staticmethod
     def login_with_facebook(id_token: str):
         try:

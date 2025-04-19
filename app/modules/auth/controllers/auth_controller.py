@@ -79,9 +79,6 @@ def refresh_token(refresh_token: str, auth_service: AuthService = Depends()):
    
 @router.post("/login-google")
 def login_google(payload: GoogleLoginSchema, auth_service: AuthService = Depends()):
-    """
-    API để đăng nhập bằng Google.
-    """
     print(f"Received payload: {payload}")  # ✅ In ra log kiểm tra payload
     result = auth_service.login_with_google(payload.id_token)
     if not result:
