@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends, Request, UploadFile, File
-from app.modules.user.services.user_service import UserService 
 from app.modules.user.schemas.user_schema import UserCreate, UserUpdate ,UpdatePasswordSchema
-from app.common.security.auth import auth_guard  # Bảo vệ route
+from app.common.validators.validate_image import validate_image_file 
+from app.modules.user.services.user_service import UserService
+from app.common.security.auth import auth_guard
 
 router = APIRouter()
 
@@ -51,6 +52,7 @@ async def update_profile_picture(
 ):
     try:
         user_id = request.state.user.get("uid")
+        validate_image_file(image)
         return UserService.update_profile_picture(user_id, image)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

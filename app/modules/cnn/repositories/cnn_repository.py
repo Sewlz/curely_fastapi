@@ -14,28 +14,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class CNNRepository:
     @staticmethod
-    def save_diagnosis(user_id: str, image_url: str, prediction: str, confidence: float):
-        diagnosis_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat()
-
+    async def save_diagnosis(user_id: str, image_url: str, prediction: str, confidence: float, predict_type: str):
         try:
-            result = supabase.table("diagnosisHistory").select("historyId").eq("userId", user_id).limit(1).execute()
+            diagnosis_id = str(uuid.uuid4())
+            timestamp = datetime.utcnow().isoformat()
+            typeId = await CNNRepository.get_type_id(predict_type)
+            history_id = CNNRepository.get_or_create_history_id(user_id, timestamp)
 
-            if result.data:
-                # If the user has history
-                history_id = result.data[0]['historyId']
-            else:
-                # If user has no history then create new history
-                history_id = str(uuid.uuid4())
-                supabase.table("diagnosisHistory").insert({
-                    "historyId": history_id,
-                    "userId": user_id,
-                    "updatedAt": timestamp
-                }).execute()
-
-            # save data to table 'diagnoses'
             record = DiagnosisRecord(
                 diagnosisId=diagnosis_id,
+                typeId=typeId,
                 historyId=history_id,
                 mriImageUrl=image_url,
                 aiPrediction=prediction,
@@ -48,8 +36,38 @@ class CNNRepository:
         except APIError as e:
             print("Supabase API Error:", e)
             raise
-
+        
         return diagnosis_id
+    
+    @staticmethod
+    def get_or_create_history_id(user_id: str, timestamp: str) -> str:
+        result = supabase.table("diagnosisHistory").select("historyId").eq("userId", user_id).limit(1).execute()
+
+        if result.data:
+            return result.data[0]['historyId']
+
+        history_id = str(uuid4())
+        supabase.table("diagnosisHistory").insert({
+            "historyId": history_id,
+            "userId": user_id,
+            "updatedAt": timestamp
+        }).execute()
+
+        return history_id
+
+    @staticmethod
+    async def get_type_id(type: str) -> str:
+        try:
+            result = supabase.table('diagnosisType').select("id").eq("name", type).limit(1).execute()
+            if result.data:
+                print("get_type_id:", result.data[0]['id'])
+                return result.data[0]['id']
+            else:
+                raise ValueError(f"Diagnosis type '{type}' not found.")
+        except APIError as e:
+            print("Supabase API Error:", e)
+            raise
+
     @staticmethod
     async def upload_image(image: UploadFile):
         try:

@@ -1,9 +1,9 @@
 from typing import List
-from app.modules.cnn.validators.validate_input import PredictType
-from app.modules.cnn.validators.validate_image import validate_image_file
 from app.common.security.auth import auth_guard
 from app.modules.cnn.services.cnn_service import CNNService
 from app.modules.cnn.schemas.cnn_schema import PredictionResult
+from app.common.validators.prediction_type import PredictType
+from app.common.validators.validate_image import validate_image_file
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Query 
 
 router = APIRouter()
@@ -14,6 +14,7 @@ async def predict(predict_type:PredictType, image: UploadFile = File(...),  user
     try:
         user_id = user.get("uid")
         validate_image_file(image)
+        predict_type = predict_type.value
         return await cnn_service.predict_image(image, predict_type, user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error predicting image: {str(e)}")

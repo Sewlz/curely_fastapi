@@ -29,9 +29,10 @@ class CNNService:
         try:
             return CNNRepository.get_user_history(user_id)
         except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")        
+                raise HTTPException(status_code=500, detail=f"Error creating history: {str(e)}")
+
     @staticmethod
-    async def predict_image(image: UploadFile, predict_type, user_id: str):
+    async def predict_image(image: UploadFile, predict_type: str, user_id: str):
         try:
             data = {}
             if(predict_type == "brain"):
@@ -45,16 +46,18 @@ class CNNService:
                 raise HTTPException(status_code=400, detail="Invalid prediction result")
             else:
                 public_url = await CNNRepository.upload_image(image)
-                CNNRepository.save_diagnosis(user_id, public_url, predicted_class, confidence)
+                await CNNRepository.save_diagnosis(user_id, public_url, predicted_class, confidence, predict_type)
 
             return PredictionResult(
                 message="Prediction successful",
                 aiPrediction=predicted_class,
-                confidenceScore=confidence
+                confidenceScore=confidence,
+                predictType=predict_type
             )
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        
     @staticmethod
     def cnn_brain_predict(image:UploadFile):
         image.file.seek(0)
@@ -66,6 +69,7 @@ class CNNService:
         confidence = float(predictions[0][predicted_index])
         data = {"predicted_class": predicted_class, "confidence": confidence}
         return data
+    
     @staticmethod
     def cnn_lung_predict(image:UploadFile):
         image.file.seek(0)
