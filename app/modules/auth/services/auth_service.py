@@ -9,7 +9,7 @@ from app.common.database.supabase import supabase
 from google.auth.transport.requests import Request 
 from app.modules.auth.repositories.auth_repository import AuthRepository
 from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema
-
+from app.common.database.supabase import supabaseAdmin
 load_dotenv()
 
 CLIENT_ID_GOOGLE = os.getenv("CLIENT_ID_GOOGLE")
@@ -181,4 +181,12 @@ class AuthService:
             return {"message": "Password reset email sent successfully"}
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
+        
+    # Hàm dăng xuất
+    @staticmethod
+    def sign_out_user_service():
+        try:
+            supabaseAdmin.auth.sign_out()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error signing out: {str(e)}")
 
