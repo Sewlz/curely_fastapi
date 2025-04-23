@@ -34,4 +34,13 @@ def delete_history(diagnosis_id: str, user=Depends(auth_guard)):
         return cnn_service.delete_user_history(user_id, diagnosis_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting history: {str(e)}")
+    
+@router.delete("/history-multi")
+def delelte_multiHistory(uuid_list: list[str] , user=Depends(auth_guard)):
+    try:
+        user_id = user.get("uid")
+        print(f'controller: list history {uuid_list}')
+        return cnn_service.delete_user_multiHistory(user_id, uuid_list)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error when deleting multi history: {str(e)}")
 

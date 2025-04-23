@@ -189,4 +189,52 @@ class CNNRepository:
             raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi trong diagnoses")
 
         return {"message": "Delete Successful!"}
+    
+    @staticmethod
+    def delete_multiHistory_record(user_id: str, uuid_list: list[str]):
+        existing_diagnoses = supabase.table('diagnoses')\
+            .select('diagnosisId, historyId')\
+            .in_('diagnosisId', uuid_list)\
+            .execute()
 
+        if not existing_diagnoses.data:
+            raise HTTPException(status_code=404, detail="Không tìm thấy diagnosisId nào trong bảng diagnoses.")
+
+        found_ids = [item['diagnosisId'] for item in existing_diagnoses.data]
+        history_ids = list(set([item['historyId'] for item in existing_diagnoses.data]))
+
+        permission_result = supabase.table("diagnosisHistory")\
+            .select("historyId, userId")\
+            .in_("historyId", history_ids)\
+            .execute()
+
+        history_user_map = {item["historyId"]: item["userId"] for item in permission_result.data}
+        unauthorized_ids = []
+
+        for record in existing_diagnoses.data:
+            if history_user_map.get(record["historyId"]) != user_id:
+                unauthorized_ids.append(record["diagnosisId"])
+
+        if unauthorized_ids:
+            raise HTTPException(
+                status_code=403,
+                detail=f"You do not have permission to delete the following diagnosisIds: {unauthorized_ids}"
+            )
+
+        not_found = list(set(uuid_list) - set(found_ids))
+        if not_found:
+            print(f"Các ID không tồn tại: {not_found}")
+
+        multiDiagnosis_result = supabase.table('diagnoses')\
+            .delete()\
+            .in_('diagnosisId', found_ids)\
+            .execute()
+
+        if not multiDiagnosis_result.data:
+            raise HTTPException(status_code=404, detail="Error when deleting diagnosisId in table diagnoses!")
+
+        return {
+            "message": "Successfully deleted existing diagnosisId.!",
+            "deleted_ids": found_ids,
+            "not_found_ids": not_found
+        }
