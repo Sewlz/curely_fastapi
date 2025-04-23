@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, requests
+from fastapi import APIRouter, Depends, HTTPException,Request
 from fastapi.security import HTTPBearer
 from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema , GoogleLoginSchema ,ForgotPasswordSchema ,FacebookLoginSchema
 from app.modules.auth.services.auth_service import AuthService
 router = APIRouter()
 security = HTTPBearer()
-
-# from app.common.security.auth import auth_guard
+from app.common.security.auth import auth_guard
 # from app.modules.auth.repositories.auth_repository import AuthRepository
 
 # Đăng ký người dùng
@@ -31,8 +30,6 @@ def register_user(user_data: RegisterUserSchema, auth_service: AuthService = Dep
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
 
 # Đăng nhập người dùng
 @router.post("/login")
@@ -95,8 +92,17 @@ def login_with_facebook(payload: FacebookLoginSchema):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Something went wrong while logging in with Facebook")
     
-    
 
 @router.post("/forgot-password")
 def forgot_password(payload: ForgotPasswordSchema, auth_service: AuthService = Depends()):
     return auth_service.forgot_password(payload.email)
+
+# Đăng xuất tài khoản
+@router.post("/sign_out", response_model=dict)
+async def sign_out(request: Request, user=Depends(auth_guard)):
+    try:
+        AuthService.sign_out_user_service()
+    except HTTPException as e:
+        raise e
+    return {"message": "User has been signed out successfully. Please remove tokens from client."}
+

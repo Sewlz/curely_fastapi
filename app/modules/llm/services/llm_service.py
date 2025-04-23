@@ -66,7 +66,7 @@ class LLMService:
                 inputs,
                 max_new_tokens=MAX_NEW_TOKENS,
                 temperature=TEMPERATURE,
-                do_sample=False
+                do_sample=True
             )
 
         response = self.tokenizer.decode(tokens[0][prompt_length:], skip_special_tokens=True)

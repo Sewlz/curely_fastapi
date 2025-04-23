@@ -17,7 +17,7 @@
 
 - ⚡ **FastAPI**: High-performance Python web framework.
 - 🧠 **TensorFlow/Keras**: For deep learning-based image analysis.
-- 🧠 **LangChain**: LLM integration for Q&A features.
+- 🧠 **Unsloth**: LLM integration for Q&A features.
 - 🔐 **JWT & Role-Based Access**: Secure and customizable access control.
 - 🧩 **Modular Monolith**: Clean and scalable code organization.
 - 🛢 **Supabase**: Scalable cloud database (PostgreSQL) and authentication service.
