@@ -115,8 +115,8 @@ class AuthService:
             user_data_to_insert = {
                 "userId": user_uuid,
                 "email": email,
-            }
-
+            }   
+        
             AuthRepository.upsert_oauth_user_data(user_data_to_insert)
 
             return {
