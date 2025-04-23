@@ -100,3 +100,11 @@ class CNNService:
             return CNNRepository.delete_history_record(user_id, diagnosis_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting history record: {str(e)}")
+    
+    @staticmethod
+    def delete_user_multiHistory(user_id: str, uuid_list: list[str]):
+        print(f'service: list history {uuid_list}')
+        try:
+            return CNNRepository.delete_multiHistory_record(user_id, uuid_list)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error when deleting multi history record: {str(e)}")
