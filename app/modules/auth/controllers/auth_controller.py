@@ -37,6 +37,7 @@ def login_user(user_data: LoginSchema, auth_service: AuthService = Depends(AuthS
     try:
         # Gọi phương thức đăng nhập người dùng từ AuthService
         result = auth_service.login_user(user_data)
+        print('controller', result)
         
         # Nếu không có kết quả từ đăng nhập, tức là có lỗi
         if not result:

@@ -63,6 +63,7 @@ class AuthService:
             raise HTTPException(status_code=400, detail="Failed to retrieve tokens after login")
         
         user = response.user
+        print('user', user)
         if not user or not user.id:
             raise HTTPException(status_code=400, detail="Failed to retrieve user information after login")
 
@@ -93,6 +94,47 @@ class AuthService:
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e))
     
+    # @staticmethod
+    # def login_with_google(id_token_str: str):
+    #     try:
+    #         idinfo = id_token.verify_oauth2_token(
+    #             id_token_str,
+    #             Request(),
+    #             CLIENT_ID_GOOGLE
+    #         )
+
+    #         user_id = idinfo.get("sub")  
+    #         email = idinfo.get("email")
+    #         name = idinfo.get("name")
+    #         picture = idinfo.get("picture")
+
+    #         if not email:
+    #             raise HTTPException(status_code=400, detail="Email not found in token")
+
+    #         user_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
+
+    #         user_data_to_insert = {
+    #             "userId": user_uuid,
+    #             "email": email,
+    #         }
+
+    #         AuthRepository.upsert_oauth_user_data(user_data_to_insert)
+
+    #         return {
+    #             "message": "User logged in successfully with Google",
+    #             "uid": user_uuid,
+    #             "email": email,
+    #             "name": name,
+    #             "picture": picture,
+    #             "role": "user",
+    #         }
+
+    #     except ValueError as e:
+    #         print("❌ Token verification failed:", str(e))
+    #         raise HTTPException(status_code=401, detail="Invalid Google ID token")
+    #     except Exception as e:
+    #         print("🚨 Exception during login_with_google:", str(e))
+    #         raise HTTPException(status_code=500, detail="Internal Server Error")
     @staticmethod
     def login_with_google(id_token_str: str):
         try:
@@ -102,7 +144,7 @@ class AuthService:
                 CLIENT_ID_GOOGLE
             )
 
-            user_id = idinfo.get("sub")  
+            user_id = idinfo.get("sub")
             email = idinfo.get("email")
             name = idinfo.get("name")
             picture = idinfo.get("picture")
@@ -115,9 +157,12 @@ class AuthService:
             user_data_to_insert = {
                 "userId": user_uuid,
                 "email": email,
+                "name": name,
+                "profilePicture": picture,
             }
 
-            AuthRepository.upsert_oauth_user_data(user_data_to_insert)
+            # Kiểm tra và xử lý insert hoặc từ chối login nếu trùng email
+            result = AuthRepository.upsert_oauth_user_data(user_uuid, user_data_to_insert)
 
             return {
                 "message": "User logged in successfully with Google",
@@ -128,6 +173,8 @@ class AuthService:
                 "role": "user",
             }
 
+        except HTTPException as http_exc:
+            raise http_exc
         except ValueError as e:
             print("❌ Token verification failed:", str(e))
             raise HTTPException(status_code=401, detail="Invalid Google ID token")
