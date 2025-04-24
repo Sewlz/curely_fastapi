@@ -164,6 +164,9 @@ class AuthService:
             # Kiểm tra và xử lý insert hoặc từ chối login nếu trùng email
             result = AuthRepository.upsert_oauth_user_data(user_uuid, user_data_to_insert)
 
+            if result.get("status") == "inserted":
+                print(f"User {user_uuid} successfully inserted into users table.")
+
             return {
                 "message": "User logged in successfully with Google",
                 "uid": user_uuid,
