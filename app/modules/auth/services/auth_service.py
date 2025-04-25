@@ -22,6 +22,13 @@ class AuthService:
         if user_data.password != user_data.confirm_password:
             raise HTTPException(status_code=400, detail="Password and confirm password do not match")
 
+        # 🔍 Check email existence in the users table before registering
+        if AuthRepository.is_email_exist(user_data.email):
+            raise HTTPException(
+                status_code=400,
+                detail="This email is already registered with another method. Please log in using your password."
+            )
+
         response = supabase.auth.sign_up({
             "email": user_data.email,
             "password": user_data.password
@@ -41,6 +48,7 @@ class AuthService:
             "created_at": datetime.utcnow().isoformat(),
             "profilePicture": None
         }
+
         AuthRepository.insert_user_data(user_data_to_insert)
 
         return {

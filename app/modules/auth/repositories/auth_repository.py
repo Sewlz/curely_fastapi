@@ -12,7 +12,17 @@ class AuthRepository:
            supabase_db.table("users").insert(user_data).execute()
         except Exception as e:
             raise Exception(f"Error saving user data: {str(e)}")
-        
+    @staticmethod
+    def is_email_exist(email: str) -> bool:
+        """
+        Kiểm tra xem email đã tồn tại trong bảng users chưa
+        """
+        try:
+            response = supabase_db.table("users").select("email").eq("email", email).single().execute()
+            return bool(response.data)
+        except Exception as e:
+            print("🚨 Error checking email existence:", str(e))
+            return False
     # @staticmethod
     # def upsert_oauth_user_data(user_data: dict):
     #     """
