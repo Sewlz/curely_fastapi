@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException,Request
 from fastapi.security import HTTPBearer
-from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema , GoogleLoginSchema ,ForgotPasswordSchema ,FacebookLoginSchema
+from app.modules.auth.schemas.auth_schema import RegisterUserSchema, LoginSchema , GoogleLoginSchema ,ForgotPasswordSchema ,FacebookLoginSchema 
 from app.modules.auth.services.auth_service import AuthService
 router = APIRouter()
 security = HTTPBearer()
@@ -75,13 +75,25 @@ def refresh_token(refresh_token: str, auth_service: AuthService = Depends()):
 
 
    
+# @router.post("/login-google")
+# def login_google(payload: GoogleLoginSchema, auth_service: AuthService = Depends()):
+#     print(f"Received payload: {payload}")  # ✅ In ra log kiểm tra payload
+#     result = auth_service.login_with_google(payload.id_token)
+#     if not result:
+#         raise HTTPException(status_code=400, detail="Google login failed")
+#     return result
 @router.post("/login-google")
-def login_google(payload: GoogleLoginSchema, auth_service: AuthService = Depends()):
-    print(f"Received payload: {payload}")  # ✅ In ra log kiểm tra payload
-    result = auth_service.login_with_google(payload.id_token)
-    if not result:
-        raise HTTPException(status_code=400, detail="Google login failed")
+def login_google(body: GoogleLoginSchema):
+    result = AuthService.login_with_google(body.id_token)
+
+    if "error" in result:
+        print("Login failed:", result["error"])
+        raise HTTPException(status_code=401, detail=result["error"])
+
+    # ✅ Trả đúng định dạng user info
     return result
+
+
 
 
 @router.post("/login-facebook")
