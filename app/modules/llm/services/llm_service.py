@@ -77,9 +77,24 @@ class LLMService:
 
     def _prepare_chat_prompt(self, session_id: str, user_prompt: str):
         history = LLMRepository.get_session_messages(session_id)
-
-        chat_prompt = [{"role": "user" if msg["sender"] == "User" else "assistant", "content": msg["message"]} for msg in history]
+        
+        # Start with the latest message and build backwards
+        chat_prompt = [{"role": "user" if msg["sender"] == "User" else "assistant", "content": msg["message"]} for msg in reversed(history)]
+        chat_prompt = chat_prompt[:30]  # Limit to last N messages first (arbitrary cutoff to avoid over-fetching)
+        chat_prompt = list(reversed(chat_prompt))  # Restore original order
         chat_prompt.append({"role": "user", "content": user_prompt})
+
+        # Now iteratively truncate until under token limit
+        while True:
+            inputs = self.tokenizer.apply_chat_template(
+                chat_prompt, add_generation_prompt=True, return_tensors='pt'
+            ).to('cuda')
+            if inputs.shape[1] <= 2048:
+                break
+            if len(chat_prompt) > 1:
+                chat_prompt.pop(0)  # Remove the oldest message
+            else:
+                break
 
         return chat_prompt
 

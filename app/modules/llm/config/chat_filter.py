@@ -1,15 +1,13 @@
 import re
-
+from app.modules.llm.config.keywords import *
 class MedicalChatFilter:
     def __init__(self):
-        self.greeting_keywords = {"hi", "hello", "hey", "good morning", "good evening"}
-        self.small_talk_keywords = {"how are you", "what's up", "are you real", "tell me a joke"}
-        self.sensitive_keywords = {
-            "suicide", "self harm", "kill myself", "hurting", "abuse", "overdose", "rape"
-        }
-        self.non_medical_keywords = {
-            "weather", "movie", "celebrity", "game", "news", "recipe", "travel"
-        }
+        self.greeting_keywords = greeting_keywords
+        self.small_talk_keywords = small_talk_keywords
+        self.sensitive_keywords = sensitive_keywords
+        self.non_medical_keywords = non_medical_keywords
+        self.medical_keywords = medical_keywords
+        self.identity_keywords = identity_keywords
 
     def detect_intent(self, text: str) -> str:
         cleaned = text.lower().strip()
@@ -20,17 +18,17 @@ class MedicalChatFilter:
         if any(kw in cleaned for kw in self.non_medical_keywords):
             return "off_topic"
 
-        if any(greet in cleaned for greet in self.greeting_keywords):
+        if any(re.fullmatch(r'\b' + re.escape(kw) + r'\b', cleaned, re.IGNORECASE) for kw in greeting_keywords):
             return "greeting"
 
-        if any(talk in cleaned for talk in self.small_talk_keywords):
+        if any(kw in cleaned for kw in self.small_talk_keywords):
             return "small_talk"
-
-        if re.search(r'\b(who are you|what can you do)\b', cleaned):
-            return "identity"
-
-        if re.search(r'\b(symptom|pain|headache|fever|medication|dose|allergy|prescription|side effect|disease|treatment)\b', cleaned):
+        
+        if any(kw in cleaned for kw in self.medical_keywords):
             return "medical_query"
+
+        if any(kw in cleaned for kw in self.identity_keywords):
+            return "identity"
 
         return "unknown"
 
@@ -66,20 +64,19 @@ class MedicalChatFilter:
 
         elif intent == "identity":
             response = (
-                "I'm a medical assistant chatbot, so I'm best at answering health-related questions. "
-                "How can I assist you today?"
+                "I am a medical-assisted chatbot, developed using the Tiny-Llama model by Team Atomic. "
+                "My purpose is to provide accurate and reliable answers to your questions. "
+                "What would you like to know today?"
             )
             should_continue = False
 
         elif intent == "medical_query":
-            response = "" 
+            response = "Thanks for your question. Here's the answer to your medical query:"
             should_continue = True
 
         elif intent == "unknown":
-            response = (
-                "I'm not sure I understood your question. Could you please rephrase it in a health-related context?"
-            )
-            should_continue = False
+            response = "I will try my best to answer your question. Here's the answer:"
+            should_continue = True
 
         return {
             "intent": intent,
