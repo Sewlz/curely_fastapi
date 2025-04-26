@@ -25,8 +25,8 @@ async def update_user(
     user=Depends(auth_guard)
 ):
     try:
-        user_id = request.state.user.get("uid")
-        return UserService.update_user(user_id, update_data)
+        userId = user["uid"]
+        return UserService.update_user(userId, update_data)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -36,8 +36,8 @@ async def get_user(
     user=Depends(auth_guard)
 ):
     try:
-        user_id = request.state.user.get("uid")
-        user_data = UserService.get_user(user_id)
+        userId = user["uid"]
+        user_data = UserService.get_user(userId)
         if not user_data:
             raise HTTPException(status_code=404, detail="User not found")
         return user_data
@@ -51,9 +51,9 @@ async def update_profile_picture(
     user=Depends(auth_guard)
 ):
     try:
-        user_id = request.state.user.get("uid")
+        userId = user["uid"]
         validate_image_file(image)
-        return UserService.update_profile_picture(user_id, image)
+        return UserService.update_profile_picture(userId, image)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -64,17 +64,17 @@ def update_password(
     user = Depends(auth_guard), 
 ):
     try:
-        uid = request.state.user.get("uid")
-        email = request.state.user.get("email")
+        userId = user["uid"]
+        email = user["email"]
 
-        print(f"🔍 DEBUG - UID: {uid}")
+        print(f"🔍 DEBUG - UID: {userId}")
         print(f"🔍 DEBUG - Email: {email}")
 
-        if not uid or not email:
+        if not userId or not email:
             raise HTTPException(status_code=400, detail="User info missing from token.")
 
         return UserService.update_password(
-            uid=uid,
+            uid=userId,
             email=email,
             current_password=data.current_password,
             new_password=data.new_password,
@@ -92,15 +92,15 @@ def update_password(
 @router.delete("/delete_user", response_model=dict)
 async def delete_user_account(request: Request, user=Depends(auth_guard)):
     # Lấy user_id từ token đã được xác thực qua request.state.user
-    user_id = request.state.user.get("uid")  # Lấy uid từ token
+    userId = user["uid"]  # Lấy uid từ token
     
-    if not user_id:
+    if not userId:
         raise HTTPException(status_code=400, detail="User ID not found in token.")
     
     try:
         # Gọi hàm delete từ UserService
-        UserService.delete_user(user_id)
+        UserService.delete_user(userId)
     except HTTPException as e:
         raise e
     
-    return {"message": f"User {user_id} has been deleted."}
+    return {"message": f"User {userId} has been deleted."}
