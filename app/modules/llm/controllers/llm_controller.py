@@ -47,6 +47,9 @@ async def get_latest_session(user = Depends(auth_guard)):
     try:
         user_id = user.get("uid")
         session_id = model_service.get_latest_session(user_id)
+        if not session_id:
+            return {"sessionId": None}
+        
         return {"sessionId": session_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch latest session: {str(e)}")
