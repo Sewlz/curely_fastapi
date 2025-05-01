@@ -53,7 +53,9 @@ class LLMRepository:
         data = response.data
         if data and len(data) > 0:
             return data[0]["sessionId"]
-        raise ValueError("No sessions found for the given user.")
+        # Trả về None khi không có session
+        return None
+    
 
 
     @staticmethod

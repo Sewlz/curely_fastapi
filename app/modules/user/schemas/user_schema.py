@@ -40,11 +40,12 @@ class UserCreate(UserBase):
     pass
 
 class UserUpdate(BaseModel):
-    name: Optional[str]
-    email: Optional[EmailStr]
-    profilePicture: Optional[str]
-    nickName: Optional[str]
-    dob: Optional[date]
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    profilePicture: Optional[str] = None
+    nickName: Optional[str] = None
+    dob: Optional[date] = None
+    phone: Optional[str] = None
 
     @field_validator('name')
     @classmethod
@@ -70,6 +71,11 @@ class UserUpdate(BaseModel):
     @classmethod
     def validate_dob(cls, v):
         return validate_dob(v)
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        return validate_safe_text(v)
 
 class UpdatePasswordSchema(BaseModel):
     current_password: str = Field(..., min_length=6)

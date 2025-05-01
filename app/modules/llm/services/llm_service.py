@@ -32,12 +32,16 @@ class LLMService:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")
 
-    def get_latest_session(self, user_id: str,):
+    def get_latest_session(self, user_id: str):
         try:
             session_id = LLMRepository.get_latest_session(user_id)
+            if not session_id:
+                # Trả về None nếu không tìm thấy session
+                return None
             return session_id
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error creating session: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error fetching session: {str(e)}")
+    
 
     def generate_response(self, user_prompt: str, session_id: str, user_id: str) -> str:
         filtered = self._filter_input(user_prompt)
