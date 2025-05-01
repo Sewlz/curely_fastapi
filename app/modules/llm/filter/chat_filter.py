@@ -1,5 +1,5 @@
 import re
-from app.modules.llm.config.keywords import *
+from app.modules.llm.filter.keywords import *
 class MedicalChatFilter:
     def __init__(self):
         self.greeting_keywords = greeting_keywords

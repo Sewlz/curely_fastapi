@@ -4,7 +4,7 @@ from peft import PeftModel
 from fastapi import HTTPException
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from app.modules.llm.schemas.llm_schema import ChatMessageSchema
-from app.modules.llm.config.chat_filter import MedicalChatFilter
+from app.modules.llm.filter.chat_filter import MedicalChatFilter
 from app.modules.llm.repositories.llm_repository import LLMRepository
 from app.modules.llm.config.model_config import MODEL_PATH, ADAPTER_PATH, MAX_NEW_TOKENS, TEMPERATURE
 
