@@ -7,10 +7,11 @@ from fastapi import HTTPException, UploadFile
 from datetime import timedelta
 from app.modules.cnn.schemas.cnn_schema import PredictionResult
 from app.modules.cnn.repositories.cnn_repository import CNNRepository
-from app.modules.cnn.config.cnn_config import MODEL_PATH, LC_MODEL_PATH, CLASS_LABELS, LUNG_CANCER_CLASSES
+from app.modules.cnn.config.cnn_config import MODEL_PATH, LC_MODEL_PATH, CLASS_LABELS, LUNG_CANCER_CLASSES, CL_MODEL_PATH
 
 model = tf.keras.models.load_model(MODEL_PATH)
 lungmodel = tf.keras.models.load_model(LC_MODEL_PATH)
+classifyModel = tf.keras.models.load_model(CL_MODEL_PATH)
 
 class CNNService:
     @staticmethod
@@ -36,36 +37,53 @@ class CNNService:
             raise HTTPException(status_code=400, detail=f"Image processing error: {str(e)}")
 
     @staticmethod
-    def get_prediction_history(user_id: str):
+    def classify_mri(image: UploadFile) -> bool:
         try:
-            return CNNRepository.get_user_history(user_id)
-        except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Error creating history: {str(e)}")
+            image.file.seek(0)
+            image_data = Image.open(image.file).convert("RGB") 
+            processed_image = CNNService.preprocess_image(image_data)  
+            
+            predictions = classifyModel.predict(processed_image)
+            predicted_index = np.argmax(predictions)
+            predicted_class = CLASS_LABELS[predicted_index]  
+            
+            return predicted_class == "mri"
 
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Image classification error: {str(e)}")
+   
     @staticmethod
     async def predict_image(image: UploadFile, predict_type: str, user_id: str):
         try:
-            data = {}
-            if(predict_type == "brain"):
-                data = CNNService.cnn_brain_predict(image)
-            elif(predict_type == "lung"):
-                data = CNNService.cnn_lung_predict(image)
-            predicted_class = data["predicted_class"]
-            confidence = data["confidence"]
-
-            if (not predicted_class or not confidence):
-                raise HTTPException(status_code=400, detail="Invalid prediction result")
+            is_mri = CNNService.classify_mri(image)
+            if not is_mri:
+                return PredictionResult(
+                    message="Prediction failed: image is not an MRI",
+                    aiPrediction="non-mri",
+                    confidenceScore=0.0,
+                    predictType=predict_type
+                )
             else:
-                public_url = await CNNRepository.upload_image(image)
-                await CNNRepository.save_diagnosis(user_id, public_url, predicted_class, confidence, predict_type)
+                data = {}
+                if(predict_type == "brain"):
+                    data = CNNService.cnn_brain_predict(image)
+                elif(predict_type == "lung"):
+                    data = CNNService.cnn_lung_predict(image)
+                predicted_class = data["predicted_class"]
+                confidence = data["confidence"]
 
-            return PredictionResult(
-                message="Prediction successful",
-                aiPrediction=predicted_class,
-                confidenceScore=confidence,
-                predictType=predict_type
-            )
+                if (not predicted_class or not confidence):
+                    raise HTTPException(status_code=400, detail="Invalid prediction result")
+                else:
+                    public_url = await CNNRepository.upload_image(image)
+                    await CNNRepository.save_diagnosis(user_id, public_url, predicted_class, confidence, predict_type)
 
+                return PredictionResult(
+                    message="Prediction successful",
+                    aiPrediction=predicted_class,
+                    confidenceScore=confidence,
+                    predictType=predict_type
+                )
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
         
@@ -93,7 +111,14 @@ class CNNService:
         confidence = float(predictions[0][predicted_index])
         data = {"predicted_class": predicted_class, "confidence": confidence}
         return data
-
+    
+    @staticmethod
+    def get_prediction_history(user_id: str):
+        try:
+            return CNNRepository.get_user_history(user_id)
+        except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Error creating history: {str(e)}")
+        
     @staticmethod
     def delete_user_history(user_id: str, diagnosis_id: str):
         try:
