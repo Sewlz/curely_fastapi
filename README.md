@@ -2,7 +2,7 @@
 
 ## 🏥 Introduction
 
-**Curely API** is the backend system powering the **Curely** – an AI-powered mobile application that supports early detection of **brain cancer** and **kidney cancer**. This backend is developed with **FastAPI** using a modular monolith architecture and integrates AI models (LLM & CNN), authentication, user management, and Supabase for data storage.
+**Curely API** is the backend system powering the **Curely** – an AI-powered mobile application that supports early detection of **brain cancer** and **lung cancer**. This backend is developed with **FastAPI** using a modular monolith architecture and integrates AI models (LLM & CNN), authentication, user management, and Supabase for data storage.
 
 ## 🚀 Core Features
 
